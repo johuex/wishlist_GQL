@@ -1,0 +1,82 @@
+type User {
+    id: ID!
+    username: String!
+    surname: String
+    userpic: String
+    about: String
+    birthday: String
+    password_hash: String 
+    nickname: String
+    email: String
+    token: String
+    token_experation: String
+    last_seen: String
+    wishitems: [Wishitem]
+    wishlists: [Wishlist]
+}
+
+type Wishitem {
+    id
+    title
+    about
+    access_level
+    status
+    giver_id
+    date_creation
+    date_for_status
+}
+
+type Wishlist {
+    id
+    user_id
+    title
+    about
+    access_level
+
+}
+
+type Grouplist {
+    id
+    title
+    about
+    date
+}
+
+type Friendship {
+
+}
+
+type Friendrequest {
+
+}
+
+
+
+
+
+"""
+List of available query for GET
+"""
+type Query {
+
+}
+
+"""
+List of available mutation for POST, DELETE, PUT
+"""
+type Mutation {
+	
+}
+
+"""
+List of available subcription for live data change
+"""
+type Subscription {
+
+}
+
+schema {
+	query:Query
+	mutation: Mutation
+    subscription: Subscription
+}
