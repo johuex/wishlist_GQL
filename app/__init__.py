@@ -18,7 +18,7 @@ def create_app():
     app.add_route(
         "/graphql",
         GraphQLApp(
-            schema=graphene.Schema(query=Query(), mutation=Mutation()),
+            schema=graphene.Schema(query=Query, mutation=Mutation),
             executor_class=AsyncioExecutor, graphiql=True
         )
     )

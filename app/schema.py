@@ -43,15 +43,14 @@ class User(SQLAlchemyObjectType):
         description = 'Table of Users'
         model = UserModel
         # as tuple: () = (smthg,)
-        interfaces = (relay.Node)  # interfaces where Users used
-        possible_types = ()  # types used in Users
+        interfaces = (relay.Node,)  # interfaces where Users used
+        #possible_types = ()  # types used in Users
 
 
 class Wishlist(SQLAlchemyObjectType):
     class Meta:
         description = "Table of Wishlists"
         model = WishlistModel
-
 
 
 class Group(SQLAlchemyObjectType):

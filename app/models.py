@@ -25,10 +25,15 @@ class FriendShip(Base):
     user_id_2 = Column(Integer)
     PrimaryKeyConstraint(user_id_1, user_id_2)
 
+
 class User(Base):
     __tablename__ = 'users'
     id = Column(
         Integer,
+        ForeignKey('friendship.user_id_1'),
+        ForeignKey('friendship.user_id_2'),
+        ForeignKey('friends_requests.user_id_from'),
+        ForeignKey('friends_requests.user_id_to'),
         primary_key=True,
         autoincrement=True
     )
@@ -44,10 +49,6 @@ class User(Base):
     last_seen = Column(DateTime())
     token = Column(Text())
     token_experation = Column(DateTime())
-    ForeignKeyConstraint((id,), [FriendRequests.user_id_from])
-    ForeignKeyConstraint((id,), [FriendRequests.user_id_to])
-    ForeignKeyConstraint((id,), [FriendShip.user_id_1])
-    ForeignKeyConstraint((id,), [FriendShip.user_id_2])
 
 
 class Wishlist(Base):
@@ -109,3 +110,4 @@ class GroupUser(Base):
     role_in_group = Column(RoleEnum, nullable=False)
 
 Base.metadata.create_all(engine)
+
