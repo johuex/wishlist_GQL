@@ -1,7 +1,9 @@
 """GQL Schema description"""
-from graphene import relay, ObjectType, ID, String, NonNull, List, Enum, Date, DateTime, Int
+from graphene import relay, ObjectType, Union
 from app.models import User as UserModel, FriendRequests as FriendRequestsModel, FriendShip as FriendShipModel,\
-    Item as ItemModel, Group as GroupModel, Wishlist as WishlistModel
+    Item as ItemModel, Group as GroupModel, Wishlist as WishlistModel,\
+    RoleEnum as RoleEumModel, DegreeEnum as DegreeEnumModel, AccessLevelEnum as AccessLevelEnumModel, \
+    StatusEnum as StatusEnumModel
 from graphene_sqlalchemy import SQLAlchemyObjectType
 
 
@@ -45,6 +47,7 @@ class User(SQLAlchemyObjectType):
         # as tuple: () = (smthg,)
         interfaces = (relay.Node,)  # interfaces where Users used
         #possible_types = ()  # types used in Users
+        exclude = ("password_hash",)
 
 
 class Wishlist(SQLAlchemyObjectType):
@@ -57,3 +60,39 @@ class Group(SQLAlchemyObjectType):
     class Meta:
         description = "Table for GroupLists"
         model = GroupModel
+
+
+class RoleEnum(ObjectType):
+    class Meta:
+        description = "Enum for roles on grouplists"
+        model = RoleEumModel
+
+
+class DegreeEnum(ObjectType):
+    class Meta:
+        description = "Enum for degree in items"
+        model = DegreeEnumModel
+
+
+class AccessLevelEnum(ObjectType):
+    class Meta:
+        description = "Enum for access_levels"
+        model = AccessLevelEnumModel
+
+
+class StatusEnum(ObjectType):
+    class Meta:
+        description = "Enum for status of items"
+        model = StatusEnumModel
+
+
+class UsersWishlistsAndItems(Union):
+    class Meta:
+        description = "Union returning Wishlists and Items of User"
+        types = (Wishlist, Item)
+
+
+class Search(Union):
+    class Meta:
+        description = "Union returning search of Wishlists, Items and Users"
+        types = (Wishlist, Item, User)

@@ -4,13 +4,12 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from app.config import Config
 
-engine = create_engine(
-Config.SQLALCHEMY_DATABASE_URL
-#    Config.SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
+engine = create_engine(Config.SQLALCHEMY_DATABASE_URL)
+#Config.SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
+SessionLocal.configure(bind=engine)
+db_session = SessionLocal()  # наша сессия, через которую мы можем query или add
 db = databases.Database(Config.SQLALCHEMY_DATABASE_URL)
 
 Base = declarative_base()
