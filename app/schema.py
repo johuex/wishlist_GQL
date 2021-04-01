@@ -16,7 +16,7 @@ class FriendRequests(SQLAlchemyObjectType):
     user_id_to = User() '''
 
 
-class Friendship(SQLAlchemyObjectType):
+class FriendShip(SQLAlchemyObjectType):
     class Meta:
         description = "Table for friendship"
         model = FriendShipModel
