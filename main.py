@@ -4,6 +4,7 @@ from app.database import db
 
 app = create_app()
 
+
 @app.on_event("startup")
 async def startup():
     await db.connect()
@@ -14,4 +15,4 @@ async def shutdown():
     await db.disconnect()
 
 
-uvicorn.run(app,)
+uvicorn.run(app, host="0.0.0.0")
