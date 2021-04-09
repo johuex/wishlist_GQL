@@ -1,5 +1,5 @@
 from sqlalchemy import Column, ForeignKey, PrimaryKeyConstraint, ForeignKeyConstraint, Integer, String, Text, Date, DateTime, Enum
-from sqlalchemy.dialects.postgresql import ENUM as pgEnum
+from sqlalchemy.orm import relationship
 from .database import Base, engine
 
 
@@ -14,26 +14,30 @@ StatusEnum = Enum('FREE', 'RESERVED', 'PERFORMED', name = "status")
 
 class FriendRequests(Base):
     __tablename__ = "friends_requests"
-    user_id_from = Column(Integer)
-    user_id_to = Column(Integer)
-    PrimaryKeyConstraint(user_id_from, user_id_to)
+    user_id_from = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    user_id_to = Column(Integer, ForeignKey("users.id"), primary_key=True)
+
 
 
 class FriendShip(Base):
     __tablename__ = "friendship"
-    user_id_1 = Column(Integer)
-    user_id_2 = Column(Integer)
-    PrimaryKeyConstraint(user_id_1, user_id_2)
+    user_id_1 = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    user_id_2 = Column(Integer, ForeignKey("users.id"), primary_key=True)
 
 
 class User(Base):
     __tablename__ = 'users'
-    id = Column(
+    '''id = Column(
         Integer,
         ForeignKey('friendship.user_id_1'),
         ForeignKey('friendship.user_id_2'),
         ForeignKey('friends_requests.user_id_from'),
         ForeignKey('friends_requests.user_id_to'),
+        primary_key=True,
+        autoincrement=True
+    )'''
+    id = Column(
+        Integer,
         primary_key=True,
         autoincrement=True
     )
@@ -49,6 +53,13 @@ class User(Base):
     last_seen = Column(DateTime())
     token = Column(Text())
     token_experation = Column(DateTime())
+    user_lists = relationship("Wishlist")
+    friends_to = relationship("FriendRequests", foreign_keys="FriendRequests.user_id_to")
+    friends_from = relationship("FriendRequests", foreign_keys="FriendRequests.user_id_from")
+    friends_1 = relationship("FriendShip", foreign_keys="FriendShip.user_id_1")
+    my_friends = relationship("FriendShip", foreign_keys="FriendShip.user_id_2")
+    user_items_owner = relationship("Item", foreign_keys="Item.owner_id")
+    user_items_giver = relationship("Item", foreign_keys="Item.giver_id")
 
 
 class Wishlist(Base):
@@ -73,6 +84,8 @@ class Item(Base):
     list_id = Column(Integer, ForeignKey('wishlist.id'))
     date_for_status = Column(DateTime(), nullable=False)
     degree = Column(DegreeEnum)
+    giver = relationship("User", foreign_keys=[giver_id])
+    owner = relationship("User", foreign_keys=[owner_id])
 
 
 class ItemPicture(Base):

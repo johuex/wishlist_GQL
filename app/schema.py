@@ -1,9 +1,10 @@
 """GQL Schema description"""
-from graphene import relay, ObjectType, Union
+from graphene import relay, ObjectType, Union, List, NonNull
 from app.models import User as UserModel, FriendRequests as FriendRequestsModel, FriendShip as FriendShipModel,\
     Item as ItemModel, Group as GroupModel, Wishlist as WishlistModel,\
     RoleEnum as RoleEumModel, DegreeEnum as DegreeEnumModel, AccessLevelEnum as AccessLevelEnumModel, \
     StatusEnum as StatusEnumModel
+
 from graphene_sqlalchemy import SQLAlchemyObjectType
 
 
@@ -40,16 +41,6 @@ class Item(SQLAlchemyObjectType):
     path_to_picture = List(String())'''
 
 
-class User(SQLAlchemyObjectType):
-    class Meta:
-        description = 'Table of Users'
-        model = UserModel
-        # as tuple: () = (smthg,)
-        interfaces = (relay.Node,)  # interfaces where Users used
-        #possible_types = ()  # types used in Users
-        exclude = ("password_hash",)
-
-
 class Wishlist(SQLAlchemyObjectType):
     class Meta:
         description = "Table of Wishlists"
@@ -60,6 +51,18 @@ class Group(SQLAlchemyObjectType):
     class Meta:
         description = "Table for GroupLists"
         model = GroupModel
+
+
+class User(SQLAlchemyObjectType):
+    class Meta:
+        description = 'Table of Users'
+        model = UserModel
+        # as tuple: () = (smthg,)
+        interfaces = (relay.Node,)  # interfaces where Users used
+        # possible_types = ()  # types used in Users
+        exclude = ("password_hash", "friends_from", "friends_1")
+    #users_items = List(Item)
+    #users_wishlists = List(Wishlist)
 
 
 class RoleEnum(ObjectType):

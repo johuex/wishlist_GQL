@@ -6,7 +6,7 @@ from graphql.execution.executors.asyncio import AsyncioExecutor
 from starlette.applications import Starlette
 from starlette.graphql import GraphQLApp
 from app.queries import Query
-from app.mutation import Mutation
+from app.mutations import Mutation
 # from app.types import Types
 from .database import SessionLocal, engine, db
 from .models import Base

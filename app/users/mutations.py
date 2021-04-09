@@ -2,9 +2,9 @@ from graphene import ObjectType, Mutation, String, Boolean, Field, ID, InputObje
 from graphql import GraphQLError
 from sqlalchemy import update
 
-from .models import User
-from .database import db_session as db
-from .auth import au
+from app.models import User
+from app.database import db_session as db
+from app.auth import au
 
 
 class UserInput(InputObjectType):
@@ -55,6 +55,6 @@ class LoginUser(Mutation):
             return LoginUser(ok=False, message="Invalid password or email")
 
 
-class Mutation(ObjectType):
+class UserMutation(ObjectType):
     register = RegisterUser.Field()
     authorization = LoginUser.Field()
