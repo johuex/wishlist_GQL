@@ -14,3 +14,11 @@ query {
     id
   }
 }
+
+mutation {
+  authorization(email: "polds@list.ru",password:"1112"){
+    ok
+    message
+    token
+  }
+}

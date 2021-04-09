@@ -89,7 +89,15 @@ class Group(Base):
     access_level = Column(AccessLevelEnum, nullable=False)
     date_creation = Column(DateTime(), nullable=False)
     date = Column(DateTime(), nullable=False)
-
+'''
+    def from_dict(self, data, new_user=False):
+        for field in ['username', 'nickname', 'email']:
+            if field in data:
+                setattr(self, field, data[field])
+        if new_user and 'password' in data:
+            self.set_password(data['password'])
+            self.last_seen = datetime.now().isoformat() + 'Z'
+'''
 
 class GroupList(Base):
     __tablename__ = "group_list"
@@ -109,5 +117,5 @@ class GroupUser(Base):
     user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
     role_in_group = Column(RoleEnum, nullable=False)
 
-Base.metadata.create_all(engine)
 
+Base.metadata.create_all(engine)
