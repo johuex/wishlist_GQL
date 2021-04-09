@@ -26,8 +26,8 @@ class Query(ObjectType):
 
     async def resolve_user_by_id(parent, info, user_id, token):
         """return user by id"""
-        user_id = au.decode_token(str(token))
-        if user_id["sub"] == db.query(UserDB.id).filter_by(token=token).first():
+        id_from_token = int(au.decode_token(token))
+        if int(user_id) == id_from_token:
             return db.query(UserDB).filter_by(id=user_id).first()
         else:
             raise HTTPException(status_code=401, detail='Access denied')

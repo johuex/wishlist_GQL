@@ -45,7 +45,7 @@ class LoginUser(Mutation):
     message = String()
 
     def mutate(self, info, email, password):
-        user = db.query(User).filter_by(email=str(email)).first()
+        user = db.query(User).filter_by(email=email).first()
         if au.verify_password(password, user.password_hash):
             token = au.encode_token(user.id)
             user.token = token

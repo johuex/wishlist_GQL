@@ -7,7 +7,7 @@ from app.config import Config
 
 
 class AuthHandler:
-    """token authorization"""
+    """token authentication and authorization class"""
     security = HTTPBearer()
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     secret = Config.SECRET_KEY
@@ -34,7 +34,7 @@ class AuthHandler:
 
     def decode_token(self, token):
         try:
-            payload = jwt.decode(token, self.secret, algorithm=['HS256'])
+            payload = jwt.decode(token, self.secret, algorithms=['HS256'])
             return payload['sub']
         except jwt.ExpiredSignatureError:
             raise HTTPException(status_code=401, detail='Signature has expired')
@@ -47,5 +47,6 @@ class AuthHandler:
     def auth_wrapper(self, auth: HTTPAuthorizationCredentials = Security(security)):
         """"""
         return self.decode_token(auth.credentials)
+
 
 au = AuthHandler()
