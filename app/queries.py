@@ -5,6 +5,7 @@ from .schema import User as UserQl, Wishlist as WishlistQl, Item as ItemQl, Frie
 
 from .database import db_session as db
 from .auth import au
+from .errors import *
 
 
 class Query(ObjectType):
@@ -30,7 +31,8 @@ class Query(ObjectType):
         if int(user_id) == id_from_token:
             return db.query(UserDB).filter_by(id=user_id).first()
         else:
-            raise HTTPException(status_code=401, detail='Access denied')
+            # TODO сделать грамотный вывод об ошибке в ???
+            return error_response(401, 'Access denied')
 
 
     async def resolve_user_by_nickname(parent, info, nickname):
