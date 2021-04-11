@@ -12,23 +12,23 @@ class FriendRequests(SQLAlchemyObjectType):
     class Meta:
         description = "Table of requests for friendship"
         model = FriendRequestsModel
-        '''
-    user_id_from = User()
-    user_id_to = User() '''
+        interfaces = (relay.Node,)
+
 
 
 class FriendShip(SQLAlchemyObjectType):
     class Meta:
         description = "Table for friendship"
         model = FriendShipModel
-    '''user_id_1 = User()
-    user_id_2 = User()'''
+        interfaces = (relay.Node,)
+
 
 
 class Item(SQLAlchemyObjectType):
     class Meta:
         description = "Table for items"
         model = ItemModel
+        interfaces = (relay.Node,)
     '''item_id = NonNull(ID(name='id'))
     title = NonNull(String())
     about = String()
@@ -45,12 +45,14 @@ class Wishlist(SQLAlchemyObjectType):
     class Meta:
         description = "Table of Wishlists"
         model = WishlistModel
+        interfaces = (relay.Node,)
 
 
 class Group(SQLAlchemyObjectType):
     class Meta:
         description = "Table for GroupLists"
         model = GroupModel
+        interfaces = (relay.Node,)
 
 
 class User(SQLAlchemyObjectType):
@@ -60,9 +62,8 @@ class User(SQLAlchemyObjectType):
         # as tuple: () = (smthg,)
         interfaces = (relay.Node,)  # interfaces where Users used
         # possible_types = ()  # types used in Users
-        exclude = ("password_hash", "friends_from", "friends_1")
-    #users_items = List(Item)
-    #users_wishlists = List(Wishlist)
+        exclude_fields = ('password_hash', 'token', 'refresh_token')
+
 
 
 class RoleEnum(ObjectType):
