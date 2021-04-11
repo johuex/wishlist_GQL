@@ -4,6 +4,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from app.config import Config
+from app.database import db_session as db
 
 
 class AuthHandler:
@@ -21,7 +22,7 @@ class AuthHandler:
         return self.pwd_context.verify(plain_password, hashed_password)
 
     def encode_token(self, user_id, refresh=False):
-        """creating token"""
+        """creating token or refresh_token"""
         if refresh:
             payload = {
                 'exp': datetime.utcnow() + timedelta(days=1, minutes=0),
@@ -60,9 +61,9 @@ class AuthHandler:
         except jwt.InvalidTokenError:
             raise HTTPException(status_code=401, detail='Invalid refresh_token')
 
-    def auth_wrapper(self, auth: HTTPAuthorizationCredentials = Security(security)):
-        """"""
-        return self.decode_token(auth.credentials)
+    '''def auth_wrapper(self, auth: HTTPAuthorizationCredentials = Security(security)):
+
+        return self.decode_token(auth.credentials)'''
 
 
 au = AuthHandler()
