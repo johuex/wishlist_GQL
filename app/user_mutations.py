@@ -21,6 +21,7 @@ class FastUserInputRegistration(InputObjectType):
 
 
 class ClassicRegisterUser(Mutation):
+    """Classic registration"""
     class Arguments:
         user_data = UserInputRegistration(required=True)
 
@@ -42,6 +43,7 @@ class ClassicRegisterUser(Mutation):
 
 
 class FastRegisterUser(Mutation):
+    """Fast registration for those who don't want to registrate, but want to reserve item"""
     class Arguments:
         user_data = FastUserInputRegistration(required=True)
 
@@ -59,11 +61,13 @@ class FastRegisterUser(Mutation):
 
 
 class LoginUser(Mutation):
+    """Authorization and returning token and refresh_token"""
     class Arguments:
         email = String(required=True)
         password = String(required=True)
 
     token = String()
+    refresh_token = String()
     ok = Boolean()
     message = String()
 
@@ -71,9 +75,11 @@ class LoginUser(Mutation):
         user = db.query(User).filter_by(email=email).first()
         if au.verify_password(password, user.password_hash):
             token = au.encode_token(user.id)
+            refresh_token = au.encode_token(user.id, True)
             user.token = token
+            user.refresh_token = refresh_token
             db.commit()
-            return LoginUser(ok=True, message="Token issued", token=token)
+            return LoginUser(ok=True, message="Token issued", token=token, refresh_token=refresh_token)
         else:
             return LoginUser(ok=False, message="Invalid password or email")
 

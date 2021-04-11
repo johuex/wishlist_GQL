@@ -20,29 +20,45 @@ class AuthHandler:
         """check password by password_hash"""
         return self.pwd_context.verify(plain_password, hashed_password)
 
-    def encode_token(self, user_id):
+    def encode_token(self, user_id, refresh=False):
         """creating token"""
-        payload = {
-            'exp': datetime.utcnow() + timedelta(days=0, minutes=15),
-            'iat': datetime.utcnow(),
-            'sub': user_id
-        }
+        if refresh:
+            payload = {
+                'exp': datetime.utcnow() + timedelta(days=1, minutes=0),
+                'iat': datetime.utcnow(),
+                'sub': user_id
+            }
+        else:
+            payload = {
+                'exp': datetime.utcnow() + timedelta(days=0, minutes=15),
+                'iat': datetime.utcnow(),
+                'sub': user_id
+            }
         return jwt.encode(
             payload,
             self.secret,
             algorithm='HS256')
 
-    def decode_token(self, token):
+    def decode_token(self, token, refresh_token):
         try:
             payload = jwt.decode(token, self.secret, algorithms=['HS256'])
             return payload['sub']
         except jwt.ExpiredSignatureError:
-            raise HTTPException(status_code=401, detail='Signature has expired')
+            return self.refresh_token(refresh_token)
         except jwt.InvalidTokenError:
             raise HTTPException(status_code=401, detail='Invalid token')
 
     def revoke_token(self, token):
         pass
+
+    def refresh_token(self, refresh_token):
+        try:
+            payload = jwt.decode(refresh_token, self.secret, algorithms=['HS256'])
+            return self.encode_token(payload['sub']), self.encode_token(payload['sub'])
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(status_code=401, detail='Signature has expired. Authorize again!')
+        except jwt.InvalidTokenError:
+            raise HTTPException(status_code=401, detail='Invalid refresh_token')
 
     def auth_wrapper(self, auth: HTTPAuthorizationCredentials = Security(security)):
         """"""

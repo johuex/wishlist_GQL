@@ -13,13 +13,19 @@ class Query(ObjectType):
 
     '''async def resolve_user(parent, info, user_id, token):
         """return user by id"""
-        id_from_token = int(au.decode_token(token))
+        id_from_token, new_token = int(au.decode_token(token))
         if int(user_id) == id_from_token:
             return db.query(UserDB).filter_by(id=user_id).first()
         else:
             # TODO сделать грамотный вывод об ошибке в ???
             return error_response(401, 'Access denied')
-
-
-
     '''
+
+    async def resolve_wishlist(parent, info, list_id, token):
+        pass
+
+    async def resolve_item(parent, info, item_id, token):
+        pass
+
+    async def resolve_group(parent, info, group_id, token):
+        pass
