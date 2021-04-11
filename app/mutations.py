@@ -1,4 +1,4 @@
-from app.users.mutations import UserMutation
+from app.user_mutations import UserMutation
 
 
 class Mutation(UserMutation):

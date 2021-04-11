@@ -11,4 +11,15 @@ class Query(ObjectType):
     item = SQLAlchemyConnectionField(ItemQl.connection, item_id=ID())
     group = SQLAlchemyConnectionField(GroupQl.connection, group_id=ID())
 
+    '''async def resolve_user(parent, info, user_id, token):
+        """return user by id"""
+        id_from_token = int(au.decode_token(token))
+        if int(user_id) == id_from_token:
+            return db.query(UserDB).filter_by(id=user_id).first()
+        else:
+            # TODO сделать грамотный вывод об ошибке в ???
+            return error_response(401, 'Access denied')
 
+
+
+    '''
