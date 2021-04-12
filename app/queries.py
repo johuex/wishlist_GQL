@@ -41,8 +41,7 @@ class Query(ObjectType):
             return wishlist
         else:
             # access denied for all except owner
-            # TODO сделать грамотный вывод об ошибке
-            return error_response(401, 'Access denied')
+            raise Exception('Access denied!')
 
     async def resolve_item(parent, info, item_id, token):
         id_from_token = int(au.decode_token(token))
@@ -56,8 +55,7 @@ class Query(ObjectType):
             return list
         else:
             # access denied for all except owner
-            # TODO сделать грамотный вывод об ошибке
-            return error_response(401, 'Access denied')
+            raise Exception('Access denied!')
 
     async def resolve_group(parent, info, group_id, token):
         pass

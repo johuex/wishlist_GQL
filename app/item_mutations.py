@@ -9,7 +9,7 @@ class ItemAddInput(InputObjectType):
     """Input for add item"""
     title = String(required=True)
     about = String()
-    access_level = AccessLevelEnum(required=True)
+    access_level = String(required=True)
     list_id = ID()
     degree = DegreeEnum()
     token = String()
@@ -20,9 +20,9 @@ class ItemEditInput(InputObjectType):
     item_id = ID()
     title = String()
     about = String()
-    access_level = AccessLevelEnum()
+    access_level = String()
     list_id = ID()
-    degree = DegreeEnum()
+    degree = String()
     token = String()
 
 

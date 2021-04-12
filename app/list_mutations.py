@@ -9,7 +9,7 @@ class ListAddInput(InputObjectType):
     """Input for add item"""
     title = String(required=True)
     about = String()
-    access_level = AccessLevelEnum(required=True)
+    access_level = String(required=True)
     token = String()
 
 
@@ -18,7 +18,7 @@ class ListEditInput(InputObjectType):
     list_id = ID()
     title = String()
     about = String()
-    access_level = AccessLevelEnum()
+    access_level = String()
     token = String()
 
 
@@ -55,5 +55,5 @@ class EditList(Mutation):
 
 
 class ListMutation(ObjectType):
-    add_item = AddList.Field()
-    edit_item = EditList.Field()
+    add_list = AddList.Field()
+    edit_list = EditList.Field()
