@@ -1,5 +1,5 @@
 """GQL Schema description"""
-from graphene import relay, ObjectType, Union, List, NonNull
+from graphene import relay, ObjectType, Union, List, Field
 from app.models import User as UserModel, FriendRequests as FriendRequestsModel, FriendShip as FriendShipModel,\
     Item as ItemModel, Group as GroupModel, Wishlist as WishlistModel,\
     RoleEnum as RoleEumModel, DegreeEnum as DegreeEnumModel, AccessLevelEnum as AccessLevelEnumModel, \
@@ -15,7 +15,6 @@ class FriendRequests(SQLAlchemyObjectType):
         interfaces = (relay.Node,)
 
 
-
 class FriendShip(SQLAlchemyObjectType):
     class Meta:
         description = "Table for friendship"
@@ -23,22 +22,11 @@ class FriendShip(SQLAlchemyObjectType):
         interfaces = (relay.Node,)
 
 
-
 class Item(SQLAlchemyObjectType):
     class Meta:
         description = "Table for items"
         model = ItemModel
         interfaces = (relay.Node,)
-    '''item_id = NonNull(ID(name='id'))
-    title = NonNull(String())
-    about = String()
-    access_level = NonNull(AccessLevel())
-    status = NonNull(Status())
-    giver_id = User()
-    date_creation = NonNull(DateTime())
-    date_for_status = DateTime()  # changing status date
-    degree = NonNull(Degree())
-    path_to_picture = List(String())'''
 
 
 class Wishlist(SQLAlchemyObjectType):
@@ -46,6 +34,7 @@ class Wishlist(SQLAlchemyObjectType):
         description = "Table of Wishlists"
         model = WishlistModel
         interfaces = (relay.Node,)
+
 
 
 class Group(SQLAlchemyObjectType):
@@ -62,7 +51,8 @@ class User(SQLAlchemyObjectType):
         # as tuple: () = (smthg,)
         interfaces = (relay.Node,)  # interfaces where Users used
         # possible_types = ()  # types used in Users
-        exclude_fields = ('password_hash', 'token', 'refresh_token')
+        exclude_fields = ('password_hash', 'token', 'refresh_token', 'users_lists')
+
 
 
 

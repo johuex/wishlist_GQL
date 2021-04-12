@@ -45,7 +45,8 @@ class AuthHandler:
             payload = jwt.decode(token, self.secret, algorithms=['HS256'])
             return payload['sub']
         except jwt.ExpiredSignatureError:
-            return self.refresh_token(refresh_token)
+            raise HTTPException(status_code=401, detail='Signature has expired. Authorize again!')
+            # return self.refresh_token(refresh_token)
         except jwt.InvalidTokenError:
             raise HTTPException(status_code=401, detail='Invalid token')
 

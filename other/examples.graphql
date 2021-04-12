@@ -5,6 +5,7 @@ mutation {
     									nickname: "johuex"})
   {
 		ok
+		message
   }
 
 }
