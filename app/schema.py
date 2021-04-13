@@ -4,6 +4,8 @@ from app.models import User as UserModel, FriendRequests as FriendRequestsModel,
     Item as ItemModel, Group as GroupModel, Wishlist as WishlistModel,\
     RoleEnum as RoleEumModel, DegreeEnum as DegreeEnumModel, AccessLevelEnum as AccessLevelEnumModel, \
     StatusEnum as StatusEnumModel
+from app.auth import au
+from app.database import db_session as db
 
 from graphene_sqlalchemy import SQLAlchemyObjectType
 
@@ -57,16 +59,24 @@ class User(SQLAlchemyObjectType):
         # possible_types = ()  # types used in Users
         exclude_fields = ('password_hash', 'token', 'refresh_token', 'users_lists')
 
-    def resolve_user_lists(self, info):
+    def resolve_user_lists(parent, info):
         pass
 
-    def resolve_friend_requests(self, info):
+    def resolve_friend_requests(parent, info):
         pass
 
-    def resolve_items_owner(self, info):
-        pass
+    def resolve_items_owner(parent, info, *args, **kwargs):
+        item = db.query(Item).filter_by(owner_id=int(kwargs["item"])).first()
+        if item.access_level == 'ALL':
+            return item
+        if item.access_level == 'NOBODY' and item.owner_id == parent.id:
+            return item
+        if item.access_level == 'FRIENDS' and db.query(FriendShip).filter_by(user_id_1=item.owner.id,
+                                                                       user_id_2 = parent.id).first():
+            return item
+        raise Exception("Access denied!")
 
-    def resolve_items_giver(self, info):
+    def resolve_items_giver(parent, info):
         pass
 
 

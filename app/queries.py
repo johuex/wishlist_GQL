@@ -5,7 +5,7 @@ from app.models import User as UserDB, Wishlist as WishlistDB, Item as ItemDB, G
     FriendShip as FSDB
 from app.database import db_session as db
 from app.errors import *
-from app.auth import au
+from app.auth import au, token_check
 
 
 class Query(ObjectType):
@@ -30,34 +30,34 @@ class Query(ObjectType):
             # TODO сделать грамотный вывод об ошибке в ???
             return error_response(401, 'Access denied')
     '''
-    async def resolve_user(parent, info, user_id):
+    @token_check
+    async def resolve_user(parent, info, user_id, id_from_token):
         return db.query(UserDB).filter_by(id=int(user_id)).first()
 
-    async def resolve_wishlist(parent, info, list_id, token):
-        id_from_token = int(au.decode_token(token))
-        wishlist = db.query(WishlistDB).filter_by(id=list_id).first()
-        if (wishlist.user_id == id_from_token) or \
-            (wishlist.access_level == 'FRIENDS' and db.query(FSDB).filter_by(user_id_1=wishlist.user_id,
-                                                                             user_id_2=id_from_token).first()):
-            # if it's owner of wishlist or his friend - show it
+    @token_check
+    async def resolve_wishlist(parent, info, list_id, token, id_from_token):
+        wishlist = db.query(WishlistDB).filter_by(id=int(list_id)).first()
+        if wishlist.access_level == 'ALL':
             return wishlist
-        else:
-            # access denied for all except owner
-            raise Exception('Access denied!')
+        if wishlist.access_level == 'NOBODY' and wishlist.user_id == id_from_token:
+            return wishlist
+        if wishlist.access_level == 'FRIENDS' and db.query(FSDB).filter_by(user_id_1=wishlist.user_id,
+                                                                       user_id_2=id_from_token).first():
+            return wishlist
+        raise Exception("Access denied!")
 
-    async def resolve_item(parent, info, item_id, token):
-        id_from_token = int(au.decode_token(token))
+    @token_check
+    async def resolve_item(parent, info, item_id, id_from_token, token=None):
         item = db.query(ItemDB).filter_by(id=int(item_id)).first()
-        if item.owner_id == id_from_token:
+        if item.access_level == 'ALL':
             return item
-        elif item.access_level == 'FRIENDS' and db.query(FSDB).filter_by(user_id_1=item.user_id,
-                                                                         user_id_2=id_from_token).first():
+        if item.access_level == 'NOBODY' and item.owner_id == id_from_token:
             return item
-        elif item.giver_id == id_from_token:
+        if item.access_level == 'FRIENDS' and db.query(FSDB).filter_by(user_id_1=item.owner.id,
+                                                                       user_id_2 = id_from_token).first():
             return item
-        else:
-            # access denied for all except owner
-            raise Exception('Access denied!')
+        raise Exception("Access denied!")
 
+    @token_check
     async def resolve_group(parent, info, group_id, token):
         pass

@@ -3,7 +3,7 @@ from graphene import ObjectType, Mutation, String, Boolean, Date, ID, InputObjec
 
 from app.models import User
 from app.database import db_session as db
-from app.auth import au
+from app.auth import au, token_required
 
 
 class UserInputRegistration(InputObjectType):
@@ -102,8 +102,9 @@ class EditUser(Mutation):
     ok = Boolean()
     message = String()
 
-    def mutate(self, info, data):
-        id_from_token = int(au.decode_token(data.token))
+    @token_required
+    def mutate(self, info, data, id_from_token):
+        #id_from_token = int(au.decode_token(data.token))
         if int(data.user_id) != id_from_token:
             return EditUser(ok=False, message="Access denied!")
         user = db.query(User).filter_by(id=data.user_id).first()

@@ -8,7 +8,7 @@ from starlette.graphql import GraphQLApp
 from app.queries import Query
 from app.mutations import Mutation
 # from app.types import Types
-from .database import SessionLocal, engine, db
+from .database import SessionLocal, engine
 from .models import Base
 
 # db = SessionLocal()

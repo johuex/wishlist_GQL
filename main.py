@@ -1,10 +1,10 @@
 import uvicorn
 from app import create_app
-from app.database import db
+#from app.database import db
 
 app = create_app()
 
-
+'''
 @app.on_event("startup")
 async def startup():
     await db.connect()
@@ -13,6 +13,6 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
     await db.disconnect()
-
+'''
 
 uvicorn.run(app)

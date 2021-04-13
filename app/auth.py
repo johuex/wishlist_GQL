@@ -5,9 +5,10 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from app.config import Config
 from app.database import db_session as db
+import functools
 
 
-class AuthHandler:
+class AuthHandler():
     """token authentication and authorization class"""
     security = HTTPBearer()
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -45,9 +46,11 @@ class AuthHandler:
             payload = jwt.decode(token, self.secret, algorithms=['HS256'])
             return payload['sub']
         except jwt.ExpiredSignatureError:
+            # TODO делать возврат ошибки через JSONResponse ???
             raise HTTPException(status_code=401, detail='Signature has expired. Authorize again!')
             # return self.refresh_token(refresh_token)
         except jwt.InvalidTokenError:
+            # TODO делать возврат ошибки через JSONResponse ???
             raise HTTPException(status_code=401, detail='Invalid token')
 
     def revoke_token(self, token):
@@ -58,8 +61,10 @@ class AuthHandler:
             payload = jwt.decode(refresh_token, self.secret, algorithms=['HS256'])
             return self.encode_token(payload['sub']), self.encode_token(payload['sub'])
         except jwt.ExpiredSignatureError:
+            # TODO делать возврат ошибки через JSONResponse ???
             raise HTTPException(status_code=401, detail='Signature has expired. Authorize again!')
         except jwt.InvalidTokenError:
+            # TODO делать возврат ошибки через JSONResponse ???
             raise HTTPException(status_code=401, detail='Invalid refresh_token')
 
     '''def auth_wrapper(self, auth: HTTPAuthorizationCredentials = Security(security)):
@@ -68,3 +73,26 @@ class AuthHandler:
 
 
 au = AuthHandler()
+
+
+def token_required(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if kwargs['data'].token is None:
+            raise Exception("Token missed!")
+        else:
+            id_from_token = au.decode_token(kwargs["data"].token)
+            return func(*args, **kwargs, id_from_token=id_from_token)
+    return wrapper
+
+
+def token_check(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        id_from_token = 0
+        if kwargs.get("token") and kwargs["token"] is not None:
+            id_from_token = au.decode_token(kwargs["token"])
+        return func(*args, **kwargs, id_from_token=id_from_token)
+    return wrapper
+
+# TODO написать декаратор last_seen
