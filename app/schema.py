@@ -41,8 +41,6 @@ class Wishlist(SQLAlchemyObjectType):
         pass
 
 
-
-
 class Group(SQLAlchemyObjectType):
     class Meta:
         description = "Table for GroupLists"
@@ -65,7 +63,7 @@ class User(SQLAlchemyObjectType):
     def resolve_friend_requests(parent, info):
         pass
 
-    def resolve_items_owner(parent, info, *args, **kwargs):
+    def resolve_items_owner(parent, info, args, context):
         item = db.query(Item).filter_by(owner_id=int(kwargs["item"])).first()
         if item.access_level == 'ALL':
             return item

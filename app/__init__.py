@@ -1,13 +1,10 @@
 import graphene
-from fastapi import FastAPI, APIRouter, Request, Depends
-# from fastapi.security import HTTPBasic
+from fastapi import FastAPI, APIRouter, Request
 
 from graphql.execution.executors.asyncio import AsyncioExecutor
-from starlette.applications import Starlette
 from starlette.graphql import GraphQLApp
 from app.queries import Query
 from app.mutations import Mutation
-# from app.types import Types
 from .database import SessionLocal, engine
 from .models import Base
 
@@ -34,7 +31,6 @@ def create_app():
 
     app.include_router(router)
     #app.include_router(router, dependencies=[Depends(AuthHandler.auth_wrapper)])
-
 
     return app
 
