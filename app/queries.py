@@ -10,10 +10,10 @@ from app.auth import au
 
 class Query(ObjectType):
     node = relay.Node.Field()
-    user = Field(UserQl, user_id=ID(), nickname=String())
-    wishlist = Field(WishlistQl, list_id=ID())
-    item = Field(ItemQl, item_id=ID())
-    group = Field(GroupQl, group_id=ID())
+    user = Field(UserQl, user_id=ID(required=True))
+    wishlist = Field(WishlistQl, list_id=ID(required=True), token=String())
+    item = Field(ItemQl, item_id=ID(required=True), token=String())
+    group = Field(GroupQl, group_id=ID(required=True), token=String())
 
 
     #all_users = SQLAlchemyConnectionField(UserQl.connection)
@@ -30,13 +30,15 @@ class Query(ObjectType):
             # TODO сделать грамотный вывод об ошибке в ???
             return error_response(401, 'Access denied')
     '''
+    async def resolve_user(parent, info, user_id):
+        return db.query(UserDB).filter_by(id=int(user_id)).first()
 
     async def resolve_wishlist(parent, info, list_id, token):
         id_from_token = int(au.decode_token(token))
         wishlist = db.query(WishlistDB).filter_by(id=list_id).first()
-        if (wishlist["user_id"] == id_from_token) or \
-        (wishlist["access_level"] == 'FRIENDS' and db.query(FSDB).filter_by(user_id_1=wishlist["user_id"],
-                                                                        user_id_2=id_from_token).first()):
+        if (wishlist.user_id == id_from_token) or \
+            (wishlist.access_level == 'FRIENDS' and db.query(FSDB).filter_by(user_id_1=wishlist.user_id,
+                                                                             user_id_2=id_from_token).first()):
             # if it's owner of wishlist or his friend - show it
             return wishlist
         else:
@@ -45,14 +47,14 @@ class Query(ObjectType):
 
     async def resolve_item(parent, info, item_id, token):
         id_from_token = int(au.decode_token(token))
-        list = db.query(WishlistDB).filter_by(id=item_id).first()
-        if list["owner_id"] == id_from_token:
-            return list
-        elif list["access_level"] == 'FRIENDS' and db.query(FSDB).filter_by(user_id_1=list["user_id"],
-                                                                                user_id_2=id_from_token).first():
-            return list
-        elif list["giver_id"] == id_from_token:
-            return list
+        item = db.query(ItemDB).filter_by(id=int(item_id)).first()
+        if item.owner_id == id_from_token:
+            return item
+        elif item.access_level == 'FRIENDS' and db.query(FSDB).filter_by(user_id_1=item.user_id,
+                                                                         user_id_2=id_from_token).first():
+            return item
+        elif item.giver_id == id_from_token:
+            return item
         else:
             # access denied for all except owner
             raise Exception('Access denied!')

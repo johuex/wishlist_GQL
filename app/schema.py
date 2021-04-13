@@ -35,6 +35,10 @@ class Wishlist(SQLAlchemyObjectType):
         model = WishlistModel
         interfaces = (relay.Node,)
 
+    def resolve_items(self, info):
+        pass
+
+
 
 
 class Group(SQLAlchemyObjectType):
@@ -53,6 +57,17 @@ class User(SQLAlchemyObjectType):
         # possible_types = ()  # types used in Users
         exclude_fields = ('password_hash', 'token', 'refresh_token', 'users_lists')
 
+    def resolve_user_lists(self, info):
+        pass
+
+    def resolve_friend_requests(self, info):
+        pass
+
+    def resolve_items_owner(self, info):
+        pass
+
+    def resolve_items_giver(self, info):
+        pass
 
 
 

@@ -1,5 +1,5 @@
 mutation {
-   register (userData: {email: "polds@list.ru",
+   classicRegister (userData: {email: "polds@list.ru",
   										password: "1111",
     									userName: "Dmitry",
     									nickname: "johuex"})
@@ -17,9 +17,40 @@ query {
 }
 
 mutation {
-  authorization(email: "polds@list.ru",password:"1112"){
+  authorization(email: "polds@list.ru",password:"1111"){
     ok
     message
     token
+  }
+}
+
+mutation {
+  editUser(data:{userId: "1",token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MTgzMDE0MTcsImlhdCI6MTYxODMwMDUxNywic3ViIjoxfQ.uehl2vANkzuRp0fdtluPgYlzpN1r6NNm_5NiOZWKx4s",
+    nickname: "johuex"}){
+    ok
+    message
+  }
+}
+
+mutation {
+	addItem(data: {title: "Want app to work",
+  							 about: "Test item",
+  							 accessLevel: "ALL",
+  							 token: ""
+  }){
+  ok
+  message
+  }
+}
+
+query {
+  user(userId: "1"){
+    itemsOwner{
+      edges{
+        node{
+          title
+        }
+      }
+    }
   }
 }

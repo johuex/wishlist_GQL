@@ -5,7 +5,7 @@ from .database import Base, engine
 
 RoleEnum = Enum('GUEST', 'ORGANIZER', 'FRIENDS', name="role")
 
-DegreeEnum = Enum('NOTWANT', 'WANT', 'REALLYWANT', name="degree")
+DegreeEnum = Enum('NOTWANT', 'WANT', 'REALLYWANT', 'NOT_STATED', name="degree")
 
 AccessLevelEnum = Enum('ALL', 'FRIENDS', 'NOBODY', name="access")
 
@@ -70,8 +70,8 @@ class Item(Base):
     about = Column(String(1000))
     access_level = Column(AccessLevelEnum, nullable=False)
     status = Column(StatusEnum, nullable=False)
-    giver_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    owner_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    giver_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    owner_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     date_creation = Column(DateTime(), nullable=False)
     list_id = Column(Integer, ForeignKey('wishlist.id'))
     date_for_status = Column(DateTime(), nullable=False)
