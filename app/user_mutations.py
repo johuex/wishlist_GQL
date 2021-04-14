@@ -3,7 +3,7 @@ from graphene import ObjectType, Mutation, String, Boolean, Date, ID, InputObjec
 
 from app.models import User
 from app.database import db_session as db
-from app.auth import au, token_required
+from app.auth import au, token_required, last_seen_set
 
 
 class UserInputRegistration(InputObjectType):
@@ -81,6 +81,7 @@ class LoginUser(Mutation):
     ok = Boolean()
     message = String()
 
+    @last_seen_set
     def mutate(self, info, email, password):
         user = db.query(User).filter_by(email=email).first()
         if au.verify_password(password, user.password_hash):
@@ -103,6 +104,7 @@ class EditUser(Mutation):
     message = String()
 
     @token_required
+    @last_seen_set
     def mutate(self, info, data, id_from_token):
         #id_from_token = int(au.decode_token(data.token))
         if int(data.user_id) != id_from_token:

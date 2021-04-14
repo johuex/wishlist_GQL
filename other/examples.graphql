@@ -54,3 +54,15 @@ query {
     }
   }
 }
+
+query {
+  user(userId: "1"){
+    itemsOwner($token: token){
+      edges{
+        node{
+          title
+        }
+      }
+    }
+  }
+}

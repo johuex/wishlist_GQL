@@ -1,14 +1,15 @@
 import jwt
-from fastapi import HTTPException, Security
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import HTTPException
+from fastapi.security import HTTPBearer
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from app.config import Config
 from app.database import db_session as db
 import functools
+from app.models import User
 
 
-class AuthHandler():
+class AuthHandler:
     """token authentication and authorization class"""
     security = HTTPBearer()
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -95,4 +96,16 @@ def token_check(func):
         return func(*args, **kwargs, id_from_token=id_from_token)
     return wrapper
 
-# TODO написать декаратор last_seen
+
+# TODO проверить, какие аргументы приходят в декаратор last_seen
+def last_seen_set(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if kwargs.get("id_from_token") and kwargs["id_from_token"] is not None:
+            id_from_token = au.decode_token(kwargs["token"])
+            user = db.query(User).filter_by(id=id_from_token).first()
+            user.last_seen = datetime.utcnow()
+            db.commit()
+        return func(*args, **kwargs)
+
+    return wrapper

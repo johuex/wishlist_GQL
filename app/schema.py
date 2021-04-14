@@ -4,7 +4,7 @@ from app.models import User as UserModel, FriendRequests as FriendRequestsModel,
     Item as ItemModel, Group as GroupModel, Wishlist as WishlistModel,\
     RoleEnum as RoleEumModel, DegreeEnum as DegreeEnumModel, AccessLevelEnum as AccessLevelEnumModel, \
     StatusEnum as StatusEnumModel
-from app.auth import au
+from app.auth import token_check
 from app.database import db_session as db
 
 from graphene_sqlalchemy import SQLAlchemyObjectType
@@ -63,8 +63,9 @@ class User(SQLAlchemyObjectType):
     def resolve_friend_requests(parent, info):
         pass
 
-    def resolve_items_owner(parent, info, args, context):
-        item = db.query(Item).filter_by(owner_id=int(kwargs["item"])).first()
+    @token_check
+    def resolve_items_owner(parent, info, token, id_from_token):
+        item = db.query(Item).filter_by(owner_id=int(parent.id)).first()
         if item.access_level == 'ALL':
             return item
         if item.access_level == 'NOBODY' and item.owner_id == parent.id:

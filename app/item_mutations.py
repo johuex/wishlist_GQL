@@ -1,7 +1,7 @@
 from graphene import ObjectType, Mutation, String, Boolean, Field, ID, InputObjectType
 from app.models import Item
 from app.database import db_session as db
-from app.auth import token_required
+from app.auth import token_required, last_seen_set
 from datetime import datetime
 
 
@@ -34,6 +34,7 @@ class AddItem(Mutation):
     message = String()
 
     @token_required
+    @last_seen_set
     def mutate(root, info, data, id_from_token):
         if data.degree is None:
             data.degree = "NOT_STATED"
@@ -53,6 +54,7 @@ class EditItem(Mutation):
     message = String()
 
     @token_required
+    @last_seen_set
     def mutate(root, info, data, id_from_token):
         item = db.query(Item).filter_by(id=data.item_id)
         if item.owner_id == id_from_token:
