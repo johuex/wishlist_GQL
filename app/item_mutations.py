@@ -1,5 +1,5 @@
-from graphene import ObjectType, Mutation, String, Boolean, Field, ID, InputObjectType
-from app.models import Item
+from graphene import ObjectType, Mutation, String, Boolean, Enum, ID, InputObjectType
+from app.models import Item, AccessLevelEnum, StatusEnum, DegreeEnum
 from app.database import db_session as db
 from app.auth import token_required, last_seen_set, token_check
 from datetime import datetime
@@ -9,9 +9,9 @@ class ItemAddInput(InputObjectType):
     """Input for add item"""
     title = String(required=True)
     about = String()
-    access_level = String(required=True)
+    access_level = Enum.from_enum(AccessLevelEnum)
     list_id = ID()
-    degree = String()
+    degree = Enum.from_enum(DegreeEnum)
     token = String()
 
 
@@ -97,4 +97,6 @@ class ItemMutation(ObjectType):
     add_item = AddItem.Field()
     edit_item = EditItem.Field()
     delete_item = DeleteItem.Field()
+    # add_pictures = AddPictures.Field()
+    # remove_pictures = AddPictures.Field()
 

@@ -35,7 +35,7 @@ mutation {
 mutation {
 	addItem(data: {title: "Want app to work",
   							 about: "Test item",
-  							 accessLevel: "ALL",
+  							 accessLevel: ALL,
   							 token: ""
   }){
   ok
@@ -43,6 +43,7 @@ mutation {
   }
 }
 
+???
 query {
   user(userId: "1"){
     itemsOwner{
@@ -54,7 +55,7 @@ query {
     }
   }
 }
-
+???
 query {
   user(userId: "1"){
     itemsOwner($token: token){

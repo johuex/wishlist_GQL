@@ -93,8 +93,8 @@ def token_check(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         id_from_token = 0
-        if (kwargs.get("token") and kwargs["token"] is not None) or \
-           (kwargs.get("refresh_token") and kwargs["refresh_token"] is not None):
+        if (kwargs.get("token") is not None and kwargs["token"] is not None) or \
+           (kwargs.get("refresh_token") is not None and kwargs["refresh_token"] is not None):
             id_from_token = au.decode_token(kwargs["token"])
         return func(*args, **kwargs, id_from_token=id_from_token)
     return wrapper
@@ -104,11 +104,11 @@ def token_check(func):
 def last_seen_set(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        if kwargs.get("id_from_token") and kwargs["id_from_token"] is not None:
-            id_from_token = au.decode_token(kwargs["token"])
-            user = db.query(User).filter_by(id=id_from_token).first()
+        if kwargs.get("id_from_token") is not None and kwargs["id_from_token"] is not None:
+            user = db.query(User).filter_by(id=kwargs["id_from_token"]).first()
             user.last_seen = datetime.utcnow()
             db.commit()
+
         return func(*args, **kwargs)
 
     return wrapper

@@ -1,8 +1,42 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Text, Date, DateTime, Enum
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import relationship
 from .database import Base, engine
+from enum import Enum as PyEnum
 
 
+class RoleEnum(PyEnum):
+    GUEST = 0
+    ORGANIZER = 1
+    FRIENDS = 2
+
+
+class DegreeEnum(PyEnum):
+    NOTWANT = 0
+    WANT = 1
+    REALLYWANT = 2
+    NOTSTATED = 3
+
+
+class AccessLevelEnum(PyEnum):
+    ALL = 0
+    FRIENDS = 1
+    NOBODY = 2
+
+
+class StatusEnum(PyEnum):
+    FREE = 0
+    RESERVED = 1
+    PERFORMED = 2
+
+
+access_level = ENUM(AccessLevelEnum, name="access")
+degree = ENUM(DegreeEnum, name="degree")
+role = ENUM(RoleEnum, name="role")
+status = ENUM(StatusEnum, name="status")
+
+
+'''
 RoleEnum = Enum('GUEST', 'ORGANIZER', 'FRIENDS', name="role")
 
 DegreeEnum = Enum('NOTWANT', 'WANT', 'REALLYWANT', 'NOT_STATED', name="degree")
@@ -10,6 +44,7 @@ DegreeEnum = Enum('NOTWANT', 'WANT', 'REALLYWANT', 'NOT_STATED', name="degree")
 AccessLevelEnum = Enum('ALL', 'FRIENDS', 'NOBODY', name="access")
 
 StatusEnum = Enum('FREE', 'RESERVED', 'PERFORMED', name="status")
+'''
 
 
 class FriendRequests(Base):
@@ -58,7 +93,8 @@ class Wishlist(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     title = Column(String(255), nullable=False)
     about = Column(String(1000))
-    access_level = Column(AccessLevelEnum, nullable=False)
+    access_level = Column(access_level)
+    # access_level = Column(AccessLevelEnum, nullable=False)
     items = relationship("Item", foreign_keys="Item.list_id")
     user_owner = relationship("User", foreign_keys=[user_id])
 
@@ -68,14 +104,17 @@ class Item(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(255), nullable=False)
     about = Column(String(1000))
-    access_level = Column(AccessLevelEnum, nullable=False)
-    status = Column(StatusEnum, nullable=False)
+    access_level = Column(access_level, nullable=False)
+    # access_level = Column(AccessLevelEnum, nullable=False)
+    status = Column(status, nullable=False)
+    # status = Column(StatusEnum, nullable=False)
     giver_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     owner_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     date_creation = Column(DateTime(), nullable=False)
     list_id = Column(Integer, ForeignKey('wishlist.id'))
     date_for_status = Column(DateTime(), nullable=False)
-    degree = Column(DegreeEnum)
+    degree = Column(degree)
+    # degree = Column(DegreeEnum)
     giver = relationship("User", foreign_keys=[giver_id])
     owner = relationship("User", foreign_keys=[owner_id])
     pictures = relationship("ItemPicture", cascade="all,delete", foreign_keys="ItemPicture.item_id")
@@ -93,7 +132,8 @@ class Group(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(255), nullable=False)
     about = Column(String(1000))
-    access_level = Column(AccessLevelEnum, nullable=False)
+    access_level = Column(access_level, nullable=False)
+    # access_level = Column(AccessLevelEnum, nullable=False)
     date_creation = Column(DateTime(), nullable=False)
     date = Column(DateTime(), nullable=False)
     users = relationship("GroupUser", cascade="all,delete", foreign_keys="GroupUser.group_id")
@@ -121,7 +161,8 @@ class GroupUser(Base):
     __tablename__ = "group_user"
     group_id = Column(Integer, ForeignKey('group.id'), primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
-    role_in_group = Column(RoleEnum, nullable=False)
+    role_in_group = Column(role, nullable=False)
+    # role_in_group = Column(RoleEnum, nullable=False)
     users = relationship("User", foreign_keys=[user_id])
     groups = relationship("Group", foreign_keys=[group_id])
 

@@ -81,7 +81,6 @@ class LoginUser(Mutation):
     ok = Boolean()
     message = String()
 
-    @last_seen_set
     def mutate(self, info, email, password):
         user = db.query(User).filter_by(email=email).first()
         if au.verify_password(password, user.password_hash):

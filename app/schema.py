@@ -1,8 +1,9 @@
 """GQL Schema description"""
-from graphene import relay, ObjectType, Union, List, Field
+from graphene import relay, Union, Enum
 from app.models import User as UserModel, FriendRequests as FriendRequestsModel, FriendShip as FriendShipModel,\
     Item as ItemModel, Group as GroupModel, Wishlist as WishlistModel,\
-    ItemPicture as ItemPictureModel, GroupUser as GroupUserModel, GroupList as GroupListModel, ItemGroup as ItemGroupModel
+    ItemPicture as ItemPictureModel, GroupUser as GroupUserModel, GroupList as GroupListModel, \
+    ItemGroup as ItemGroupModel
 from app.auth import token_check
 from app.database import db_session as db
 
