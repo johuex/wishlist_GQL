@@ -1,7 +1,7 @@
 from graphene import ObjectType, Mutation, String, Boolean, Date, ID, InputObjectType
 
 
-from app.models import User
+from app.models import User, FriendShip as FS, FriendRequests as FR
 from app.database import db_session as db
 from app.auth import au, token_required, last_seen_set, token_check
 
@@ -106,7 +106,6 @@ class EditUser(Mutation):
     @token_required
     @last_seen_set
     def mutate(self, info, data, id_from_token):
-        #id_from_token = int(au.decode_token(data.token))
         if int(data.user_id) != id_from_token:
             return EditUser(ok=False, message="Access denied!")
         user = db.query(User).filter_by(id=data.user_id).first()
@@ -158,10 +157,10 @@ class RefreshToken(Mutation):
 
 class ChangePassword(Mutation):
     class Arguments:
-        user_id = String()
-        token = String()
-        old_password = String()
-        new_password = String()
+        user_id = String(required=True)
+        token = String(required=True)
+        old_password = String(required=True)
+        new_password = String(required=True)
 
     ok = String()
     message = String()
@@ -177,6 +176,113 @@ class ChangePassword(Mutation):
             return ChangePassword(ok=True, message="Password was changed!")
 
 
+class SendFriendRequest(Mutation):
+    """Send request for friendhsip"""
+    class Arguments:
+        to_user_id = ID(required=True)
+        token = String(required=True)
+
+    ok = Boolean()
+    message = String()
+
+    @token_check
+    def mutate(self, info, to_user_id, token, id_from_token):
+        if db.query(FS).filter_by(user_id_1=id_from_token, user_id_2=to_user_id).first() is not None:
+            SendFriendRequest(ok=False, message="You are already friends!")
+        if db.query(FR).filter_by(user_id_from=id_from_token, user_id_to=to_user_id).first() is not None:
+            SendFriendRequest(ok=False, message="You have already sent friend request to this user!")
+        db.add(FR(user_id_from=id_from_token, user_id_to=to_user_id))
+        db.commit()
+        return SendFriendRequest(ok=True, message="Friend request has been sent!")
+
+
+class AcceptFriendRequest(Mutation):
+    class Arguments:
+        from_user_id = ID(required=True)
+        token = String(required=True)
+
+    ok = Boolean()
+    message = String()
+
+    @token_check
+    def mutate(self, info, from_user_id, token, id_from_token):
+        fr = db.query(FR).filter_by(user_id_from=from_user_id, user_id_to=id_from_token).first()
+        if (fr is not None) and \
+                (db.query(FS).filter_by(user_id_1=id_from_token, user_id_2=from_user_id).first() is None):
+            db.add(FS(user_id_1=from_user_id, user_id_2=id_from_token))
+            db.add(FS(user_id_2=from_user_id, user_id_1=id_from_token))
+            db.delete(fr)
+            db.commit()
+            return AcceptFriendRequest(ok=True, message="Friend request has been accepted!")
+        else:
+            return AcceptFriendRequest(ok=False, message="Friend request hasn't been accepted!")
+
+
+class RejectFriendRequest(Mutation):
+    class Arguments:
+        from_user_id = ID(required=True)
+        token = String(required=True)
+
+    ok = Boolean()
+    message = String()
+
+    @token_check
+    def mutate(self, info, from_user_id, token, id_from_token):
+        fr = db.query(FR).filter_by(user_id_from=from_user_id, user_id_to=id_from_token).first()
+        if fr is not None:
+            db.delete(fr)
+            db.commit()
+            return RejectFriendRequest(ok=True, message="Friend request has been rejected!")
+        else:
+            return RejectFriendRequest(ok=False, message="Friend request hasn't been rejected!")
+
+
+class CancelFriendRequest(Mutation):
+    class Arguments:
+        to_user_id = ID(required=True)
+        from_user_id = ID(required=True)
+        token = String(required=True)
+
+    ok = Boolean()
+    message = String()
+
+    @token_check
+    def mutate(self, info, to_user_id, from_user_id, token, id_from_token):
+        if id_from_token != int(from_user_id):
+            return CancelFriendRequest(ok=False, message="Access denied!")
+        fr = db.query(FR).filter_by(user_id_from=id_from_token, user_id_to=to_user_id).first()
+        if fr is not None:
+            db.delete(fr)
+            db.commit()
+            return CancelFriendRequest(ok=True, message="Friend request has been canceled!")
+        else:
+            return CancelFriendRequest(ok=True, message="Friend request hasn't been canceled!")
+
+
+class RemoveFromFriends(Mutation):
+    class Arguments:
+        user_id = ID(required=True)
+        friend_id = String(required=True)
+        token = String(required=True)
+
+    ok = Boolean()
+    message = String()
+
+    @token_check
+    def mutate(self, info, user_id, friend_id, token, id_from_token):
+        if int(user_id) != id_from_token:
+            return RemoveFromFriends(ok=False, message="Access denied!")
+        fr1 = db.query(FS).filter_by(user_id_1=id_from_token, user_id_2=friend_id).first()
+        fr2 = db.query(FS).filter_by(user_id_2=id_from_token, user_id_1=friend_id).first()
+        if fr1 is not None and fr2 is not None:
+            db.delete(fr1)
+            db.delete(fr2)
+            db.commit()
+            return RemoveFromFriends(ok=True, message="Friend has been removed :-(")
+        else:
+            return RemoveFromFriends(ok=True, message="Friend hasn't been removed :-)")
+
+
 class UserMutation(ObjectType):
     classic_register = ClassicRegisterUser.Field()
     fast_register = FastRegisterUser.Field()
@@ -184,3 +290,8 @@ class UserMutation(ObjectType):
     refresh_access_token = RefreshToken.Field()
     edit_user = EditUser.Field()
     change_password = ChangePassword.Field()
+    send_friend_request = SendFriendRequest.Field()
+    accept_friend_request = AcceptFriendRequest.Field()
+    reject_friend_request = RejectFriendRequest.Field()
+    cancel_friend_request = CancelFriendRequest.Field()
+    remove_from_friends = RemoveFromFriends.Field()

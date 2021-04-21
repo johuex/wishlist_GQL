@@ -1,5 +1,6 @@
 from graphene import ObjectType, Mutation, String, Boolean, Field, ID, InputObjectType, List
 from app.models import Wishlist, Item
+from app.schema import Item as ItemQL
 from app.database import db_session as db
 from app.auth import token_required, last_seen_set, token_check
 
@@ -89,7 +90,7 @@ class AddItemsToList(Mutation):
     class Arguments:
         list_id = ID()
         token = String()
-        items_id = List(ID())
+        items_id = List(ID)
 
     ok = Boolean()
     message = String()
@@ -110,7 +111,7 @@ class DeleteItemsFromList(Mutation):
     class Arguments:
         list_id = ID()
         token = String()
-        items_id = List(ID())
+        items_id = List(ID)
 
     ok = Boolean()
     message = String()
