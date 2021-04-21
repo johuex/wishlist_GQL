@@ -23,20 +23,13 @@ class AuthHandler:
         """check password by password_hash"""
         return self.pwd_context.verify(plain_password, hashed_password)
 
-    def encode_token(self, user_id, refresh=False):
-        """creating token or refresh_token"""
-        if refresh:
-            payload = {
-                'exp': datetime.utcnow() + timedelta(days=1, minutes=0),
-                'iat': datetime.utcnow(),
-                'sub': user_id
-            }
-        else:
-            payload = {
-                'exp': datetime.utcnow() + timedelta(days=0, minutes=15),
-                'iat': datetime.utcnow(),
-                'sub': user_id
-            }
+    def encode_token(self, user_id):
+        """creating token"""
+        payload = {
+            'exp': datetime.utcnow() + timedelta(days=0, minutes=15),
+            'iat': datetime.utcnow(),
+            'sub': user_id
+        }
         return jwt.encode(
             payload,
             self.secret,
@@ -48,19 +41,26 @@ class AuthHandler:
             return payload['sub']
         except jwt.ExpiredSignatureError:
             # TODO делать возврат ошибки через JSONResponse ???
-            raise HTTPException(status_code=401, detail='Signature has expired. Authorize again!')
-            # return self.refresh_token(refresh_token)
+            raise HTTPException(status_code=401, detail='Signature has expired. Authorize again or refresh access_token!')
         except jwt.InvalidTokenError:
             # TODO делать возврат ошибки через JSONResponse ???
             raise HTTPException(status_code=401, detail='Invalid token')
 
-    def revoke_token(self, token):
-        pass
+    def revoke_token(self, user_id):
+        payload = {
+            'exp': datetime.utcnow() + timedelta(days=1, minutes=0),
+            'iat': datetime.utcnow(),
+            'sub': user_id
+        }
+        return jwt.encode(
+            payload,
+            self.secret,
+            algorithm='HS256')
 
     def refresh_token(self, refresh_token):
         try:
             payload = jwt.decode(refresh_token, self.secret, algorithms=['HS256'])
-            return self.encode_token(payload['sub']), self.encode_token(payload['sub'])
+            return self.encode_token(payload['sub']), self.revoke_token(payload['sub'])
         except jwt.ExpiredSignatureError:
             # TODO делать возврат ошибки через JSONResponse ???
             raise HTTPException(status_code=401, detail='Signature has expired. Authorize again!')
@@ -77,6 +77,7 @@ au = AuthHandler()
 
 
 def token_required(func):
+    """Returning User_ID from token, where token is required"""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         if kwargs['data'].token is None:
@@ -88,10 +89,12 @@ def token_required(func):
 
 
 def token_check(func):
+    """Returning User_ID from token, where token is default in params"""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         id_from_token = 0
-        if kwargs.get("token") and kwargs["token"] is not None:
+        if (kwargs.get("token") and kwargs["token"] is not None) or \
+           (kwargs.get("refresh_token") and kwargs["refresh_token"] is not None):
             id_from_token = au.decode_token(kwargs["token"])
         return func(*args, **kwargs, id_from_token=id_from_token)
     return wrapper

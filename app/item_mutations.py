@@ -1,7 +1,7 @@
 from graphene import ObjectType, Mutation, String, Boolean, Field, ID, InputObjectType
 from app.models import Item
 from app.database import db_session as db
-from app.auth import token_required, last_seen_set
+from app.auth import token_required, last_seen_set, token_check
 from datetime import datetime
 
 
@@ -18,6 +18,7 @@ class ItemAddInput(InputObjectType):
 class ItemEditInput(InputObjectType):
     """Input for edit item"""
     item_id = ID()
+    owner_id = ID()
     title = String()
     about = String()
     access_level = String()
@@ -56,17 +57,44 @@ class EditItem(Mutation):
     @token_required
     @last_seen_set
     def mutate(root, info, data, id_from_token):
-        item = db.query(Item).filter_by(id=data.item_id)
-        if item.owner_id == id_from_token:
+        if int(data.owner_id) != id_from_token:
+            return EditItem(ok=False, message="Access denied!")
+        item = db.query(Item).filter_by(id=data.item_id).first()
+        if data.title is not None and data.title != item.title:
             item.title = data.title
+        if data.about is not None and data.about != item.about:
             item.about = data.about
+        if data.access_level is not None and data.access_level != item.access_level:
             item.access_level = data.access_level
+        if data.list_id is not None and data.list_id != item.list_id:
             item.list_id = data.list_id
+        if data.degree is not None and data.degree != item.degree:
             item.degree = data.degree
-            db.commit()
+        db.commit()
         return EditItem(ok=True, message="Item edited!")
+
+
+class DeleteItem(Mutation):
+    class Arguments:
+        item_id = ID()
+        owner_id = ID()
+        token = String()
+
+    ok = ID()
+    message = String()
+
+    @token_check
+    def mutate(self, info, item_id, owner_id, token, id_from_token):
+        if int(owner_id) != id_from_token:
+            return DeleteItem(ok=False, message="Access denied!")
+        item = db.query(Item).filter_by(id=item_id).first()
+        # TODO если не работают Cascade, то нужно удалять в остальных таблицах вручную
+        db.delete(item)
+        db.commit()
 
 
 class ItemMutation(ObjectType):
     add_item = AddItem.Field()
     edit_item = EditItem.Field()
+    delete_item = DeleteItem.Field()
+

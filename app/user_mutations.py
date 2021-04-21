@@ -3,7 +3,7 @@ from graphene import ObjectType, Mutation, String, Boolean, Date, ID, InputObjec
 
 from app.models import User
 from app.database import db_session as db
-from app.auth import au, token_required, last_seen_set
+from app.auth import au, token_required, last_seen_set, token_check
 
 
 class UserInputRegistration(InputObjectType):
@@ -134,8 +134,53 @@ class EditUser(Mutation):
         return EditUser(ok=True, message="User edited!")
 
 
+class RefreshToken(Mutation):
+    """Returning new access_token by refresh_token"""
+    class Arguments:
+        user_id = ID(required=True)
+        refresh_token = String(required=True)
+
+    ok = Boolean()
+    access_token = String()
+    message = String()
+
+    @token_check
+    def mutate(self, info, user_id, refresh_token, id_from_token):
+        if int(user_id) != id_from_token:
+            return RefreshToken(ok=False, message="Refresh token missed!", access_token="")
+        else:
+            new_access_token, revoked_refresh_token = au.refresh_token(refresh_token)
+            user = db.query(User).filter_by(id=id_from_token).first()
+            user.refresh_token = revoked_refresh_token
+            db.commit()
+            return RefreshToken(ok=True, message="New access_token generated!", access_token=new_access_token)
+
+
+class ChangePassword(Mutation):
+    class Arguments:
+        user_id = String()
+        token = String()
+        old_password = String()
+        new_password = String()
+
+    ok = String()
+    message = String()
+
+    @token_check
+    def mutate(self, info, user_id, token, old_password, new_password, id_from_token):
+        if int(user_id) != id_from_token:
+            return ChangePassword(ok=False, message="Password wasn't changed!")
+        else:
+            user = db.query(User).filter_by(id=id_from_token).first()
+            if old_password == au.verify_password(user.password_hash):
+                user.password_hash = au.get_password_hash(new_password)
+            return ChangePassword(ok=True, message="Password was changed!")
+
+
 class UserMutation(ObjectType):
     classic_register = ClassicRegisterUser.Field()
     fast_register = FastRegisterUser.Field()
     authorization = LoginUser.Field()
+    refresh_access_token = RefreshToken.Field()
     edit_user = EditUser.Field()
+    change_password = ChangePassword.Field()
