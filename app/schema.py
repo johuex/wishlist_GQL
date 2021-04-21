@@ -2,8 +2,7 @@
 from graphene import relay, ObjectType, Union, List, Field
 from app.models import User as UserModel, FriendRequests as FriendRequestsModel, FriendShip as FriendShipModel,\
     Item as ItemModel, Group as GroupModel, Wishlist as WishlistModel,\
-    RoleEnum as RoleEumModel, DegreeEnum as DegreeEnumModel, AccessLevelEnum as AccessLevelEnumModel, \
-    StatusEnum as StatusEnumModel
+    ItemPicture as ItemPictureModel, GroupUser as GroupUserModel, GroupList as GroupListModel, ItemGroup as ItemGroupModel
 from app.auth import token_check
 from app.database import db_session as db
 
@@ -79,29 +78,38 @@ class User(SQLAlchemyObjectType):
         pass
 
 
-
-class RoleEnum(ObjectType):
+class ItemPicture(SQLAlchemyObjectType):
     class Meta:
-        description = "Enum for roles on grouplists"
-        model = RoleEumModel
+        description = "Table for picture's path of items"
+        model = ItemPictureModel
+        interfaces = (relay.Node,)
 
 
-class DegreeEnum(ObjectType):
+class GroupUser(SQLAlchemyObjectType):
     class Meta:
-        description = "Enum for degree in items"
-        model = DegreeEnumModel
+        description = "Table for users and their roles in groups"
+        model = GroupUserModel
+        interfaces = (relay.Node,)
 
 
-class AccessLevelEnum(ObjectType):
+class GroupList(SQLAlchemyObjectType):
     class Meta:
-        description = "Enum for access_levels"
-        model = AccessLevelEnumModel
+        description = "Table for lists in groups"
+        model = GroupListModel
+        interfaces = (relay.Node,)
 
 
-class StatusEnum(ObjectType):
+class ItemGroup(SQLAlchemyObjectType):
     class Meta:
-        description = "Enum for status of items"
-        model = StatusEnumModel
+        description = "Table for items in groups"
+        model = ItemGroupModel
+        interfaces = (relay.Node,)
+
+
+class Search(Union):
+    class Meta:
+        description = "Union returning search of Wishlists, Items and Users"
+        types = (Wishlist, Item, User)
 
 
 class UsersWishlistsAndItems(Union):
@@ -109,8 +117,3 @@ class UsersWishlistsAndItems(Union):
         description = "Union returning Wishlists and Items of User"
         types = (Wishlist, Item)
 
-
-class Search(Union):
-    class Meta:
-        description = "Union returning search of Wishlists, Items and Users"
-        types = (Wishlist, Item, User)
