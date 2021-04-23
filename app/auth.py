@@ -100,7 +100,6 @@ def token_check(func):
     return wrapper
 
 
-# TODO проверить, какие аргументы приходят в декаратор last_seen
 def last_seen_set(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):

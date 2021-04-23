@@ -1,8 +1,10 @@
-from graphene import ObjectType, Mutation, String, Boolean, Enum, ID, InputObjectType
+from graphene import ObjectType, Mutation, String, Boolean, Enum, ID, InputObjectType, List
+from graphene_file_upload.scalars import Upload
 from app.models import Item, AccessLevelEnum, StatusEnum, DegreeEnum
 from app.database import db_session as db
 from app.auth import token_required, last_seen_set, token_check
 from datetime import datetime
+import boto3
 
 
 class ItemAddInput(InputObjectType):
@@ -93,10 +95,29 @@ class DeleteItem(Mutation):
         db.commit()
 
 
+class AddPictures(Mutation):
+    class Arguments:
+        files = List(Upload(required=True))
+        token = String(required=True)
+        item_id = ID(required=True)
+
+    ok = Boolean()
+    message = String()
+
+    @token_check
+    def mutate(self, info, files, token, item_id, id_from_token):
+        item = db.query(Item).filter_by(id=item_id).first()
+        if item.owner_id != id_from_token:
+            return AddPictures(ok=False, message="Access denied!")
+        s3 = boto3.resource('s3')
+        for pic in files:
+            s3.Bucket('4742').put_object(Key='название файла', Body=pic)
+
+
 class ItemMutation(ObjectType):
     add_item = AddItem.Field()
     edit_item = EditItem.Field()
     delete_item = DeleteItem.Field()
-    # add_pictures = AddPictures.Field()
-    # remove_pictures = AddPictures.Field()
+    add_pictures = AddPictures.Field()
+    remove_pictures = AddPictures.Field()
 
