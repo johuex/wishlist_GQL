@@ -11,7 +11,6 @@ from app.models import User
 
 class AuthHandler:
     """token authentication and authorization class"""
-    security = HTTPBearer()
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     secret = Config.SECRET_KEY
 
@@ -68,13 +67,6 @@ class AuthHandler:
             # TODO делать возврат ошибки через JSONResponse ???
             raise HTTPException(status_code=401, detail='Invalid refresh_token')
 
-    def auth_wrapper(self, auth: HTTPAuthorizationCredentials = Security(security)):
-        """Taking user_id from from token in Authorization header"""
-        if auth.credentials is not None:
-            return self.decode_token(auth.credentials)
-        else:
-            return 0  # non-auth user's id is 0
-
 
 au = AuthHandler()
 
@@ -84,7 +76,7 @@ def token_required(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         # TODO check path to header Authorization
-        token = args[1].context['request'].headers.raw[0][1]
+        token = args[1].context['request'].headers.raw[5][1][4:].decode("utf-8")
         if token is None:
             raise Exception("Token missed!")
         else:
@@ -99,7 +91,7 @@ def token_check(func):
     def wrapper(*args, **kwargs):
         id_from_token = 0
         # TODO check path to header Authorization
-        token = args[1].context['request'].headers.raw[0][1]
+        token = args[1].context['request'].headers.raw[5][1][4:].decode("utf-8")
         if token is not None:
             id_from_token = au.decode_token(token)
         return func(*args, **kwargs, id_from_token=id_from_token)

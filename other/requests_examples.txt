@@ -1,0 +1,1 @@
+curl -i -H 'Content-Type: application/json' -H "Authorization: bearer token_example" -X POST -d '{"query": "query{item(itemId: 1){title}}"}' http://127.0.0.1:8000/

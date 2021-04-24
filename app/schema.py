@@ -65,13 +65,13 @@ class User(SQLAlchemyObjectType):
 
     @token_check
     def resolve_items_owner(parent, info, id_from_token):
-        item = db.query(Item).filter_by(owner_id=int(parent.id)).first()
+        item = db.query(Item).filter_by(owner_id=id_from_token).first()
         if item.access_level == 'ALL':
             return item
-        if item.access_level == 'NOBODY' and item.owner_id == parent.id:
+        if item.access_level == 'NOBODY' and item.owner_id == id_from_token:
             return item
         if item.access_level == 'FRIENDS' and db.query(FriendShip).filter_by(user_id_1=item.owner.id,
-                                                                       user_id_2 = parent.id).first():
+                                                                       user_id_2 = id_from_token).first():
             return item
         raise Exception("Access denied!")
 
