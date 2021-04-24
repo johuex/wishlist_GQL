@@ -1,6 +1,6 @@
 import jwt
-from fastapi import HTTPException
-from fastapi.security import HTTPBearer
+from fastapi import HTTPException, Security
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from app.config import Config
@@ -68,9 +68,12 @@ class AuthHandler:
             # TODO делать возврат ошибки через JSONResponse ???
             raise HTTPException(status_code=401, detail='Invalid refresh_token')
 
-    '''def auth_wrapper(self, auth: HTTPAuthorizationCredentials = Security(security)):
-
-        return self.decode_token(auth.credentials)'''
+    def auth_wrapper(self, auth: HTTPAuthorizationCredentials = Security(security)):
+        """Taking user_id from from token in Authorization header"""
+        if auth.credentials is not None:
+            return self.decode_token(auth.credentials)
+        else:
+            return 0  # non-auth user's id is 0
 
 
 au = AuthHandler()
@@ -80,10 +83,12 @@ def token_required(func):
     """Returning User_ID from token, where token is required"""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        if kwargs['data'].token is None:
+        # TODO check path to header Authorization
+        token = args[1].context['request'].headers.raw[0][1]
+        if token is None:
             raise Exception("Token missed!")
         else:
-            id_from_token = au.decode_token(kwargs["data"].token)
+            id_from_token = au.decode_token(token)
             return func(*args, **kwargs, id_from_token=id_from_token)
     return wrapper
 
@@ -93,13 +98,15 @@ def token_check(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         id_from_token = 0
-        if (kwargs.get("token") is not None and kwargs["token"] is not None) or \
-           (kwargs.get("refresh_token") is not None and kwargs["refresh_token"] is not None):
-            id_from_token = au.decode_token(kwargs["token"])
+        # TODO check path to header Authorization
+        token = args[1].context['request'].headers.raw[0][1]
+        if token is not None:
+            id_from_token = au.decode_token(token)
         return func(*args, **kwargs, id_from_token=id_from_token)
     return wrapper
 
 
+# TODO check last_seen kwargs
 def last_seen_set(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):

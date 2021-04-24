@@ -10,7 +10,6 @@ class ListAddInput(InputObjectType):
     title = String(required=True)
     about = String()
     access_level = String(required=True)
-    token = String()
 
 
 class ListEditInput(InputObjectType):
@@ -19,7 +18,6 @@ class ListEditInput(InputObjectType):
     title = String()
     about = String()
     access_level = String()
-    token = String()
 
 
 class AddList(Mutation):
@@ -62,14 +60,13 @@ class DeleteWishList(Mutation):
     """Delete wishlist with items or paste them in default wishlist"""
     class Arguments:
         list_id = ID()
-        token = String()
         with_items = Boolean()
 
     ok = ID()
     message = String()
 
     @token_check
-    def mutate(self, info, list_id, token, id_from_token, with_items):
+    def mutate(self, info, list_id, id_from_token, with_items):
         wlist = db.query(Wishlist).filter_by(id=list_id).first()
         if wlist.user_id != id_from_token:
             return DeleteWishList(ok=False, message="Access denied!")
@@ -89,13 +86,12 @@ class AddItemsToList(Mutation):
     """Add items in wishlist"""
     class Arguments:
         list_id = ID()
-        token = String()
         items_id = List(ID)
 
     ok = Boolean()
     message = String()
 
-    def mutate(self, info, list_id, token, items_id, id_from_token):
+    def mutate(self, info, list_id, items_id, id_from_token):
         wlist = db.query(Wishlist).filter_by(id=list_id).first()
         if wlist.user_id != id_from_token:
             return AddItemsToList(ok=False, message="Access denied!")
@@ -110,13 +106,12 @@ class DeleteItemsFromList(Mutation):
     """Delete items from wishlist and paste them to default wishlist"""
     class Arguments:
         list_id = ID()
-        token = String()
         items_id = List(ID)
 
     ok = Boolean()
     message = String()
 
-    def mutate(self, info, list_id, token, items_id, id_from_token):
+    def mutate(self, info, list_id, items_id, id_from_token):
         wlist = db.query(Wishlist).filter_by(id=list_id).first()
         if wlist.user_id != id_from_token:
             return DeleteItemsFromList(ok=False, message="Access denied!")

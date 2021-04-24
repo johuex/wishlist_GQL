@@ -10,10 +10,10 @@ class Query(ObjectType):
     class Meta:
         exclude_fields = ('users', 'wishlists', 'items', 'groups')
     node = relay.Node.Field()
-    user = Field(UserQl, user_id=ID(required=True), token=String(), description="Return user by ID")
-    wishlist = Field(WishlistQl, list_id=ID(required=True), token=String(), description="Return wishlist by ID")
-    item = Field(ItemQl, item_id=ID(required=True), token=String(), description="Return item by ID")
-    group = Field(GroupQl, group_id=ID(required=True), token=String(), description="Return group by ID")
+    user = Field(UserQl, user_id=ID(required=True), description="Return user by ID")
+    wishlist = Field(WishlistQl, list_id=ID(required=True), description="Return wishlist by ID")
+    item = Field(ItemQl, item_id=ID(required=True), description="Return item by ID")
+    group = Field(GroupQl, group_id=ID(required=True), description="Return group by ID")
     '''
     # it's an example for working with token
     async def resolve_user(parent, info, user_id, token):
@@ -25,15 +25,14 @@ class Query(ObjectType):
             # TODO сделать грамотный вывод об ошибке в ???
             return error_response(401, 'Access denied')
     '''
-    @token_check
+
     @last_seen_set
-    async def resolve_user(parent, info, user_id, id_from_token, token=None):
-        # idp=id_from_token
+    async def resolve_user(parent, info, user_id):
         return db.query(UserDB).filter_by(id=int(user_id)).first()
 
     @token_check
     @last_seen_set
-    async def resolve_wishlist(parent, info, list_id, id_from_token, token=None):
+    async def resolve_wishlist(parent, info, list_id, id_from_token):
         wishlist = db.query(WishlistDB).filter_by(id=int(list_id)).first()
         if wishlist.access_level == 'ALL':
             return wishlist
@@ -46,7 +45,7 @@ class Query(ObjectType):
 
     @token_check
     @last_seen_set
-    async def resolve_item(parent, info, item_id, id_from_token, token=None):
+    async def resolve_item(parent, info, item_id, id_from_token):
         item = db.query(ItemDB).filter_by(id=int(item_id)).first()
         if item.access_level == 'ALL':
             return item
@@ -59,5 +58,5 @@ class Query(ObjectType):
 
     @token_check
     @last_seen_set
-    async def resolve_group(parent, info, group_id, token):
+    async def resolve_group(parent, info, group_id, id_from_token):
         pass

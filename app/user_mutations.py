@@ -22,7 +22,6 @@ class FastUserInputRegistration(InputObjectType):
 
 class UserEditInput(InputObjectType):
     """Input for edit user"""
-    user_id = ID()
     phone_number = String()
     user_name = String()
     surname = String()
@@ -31,7 +30,6 @@ class UserEditInput(InputObjectType):
     birthday = Date()
     nickname = String()
     email = String()
-    token = String()
 
 
 class ClassicRegisterUser(Mutation):
@@ -105,9 +103,7 @@ class EditUser(Mutation):
     @token_required
     @last_seen_set
     def mutate(self, info, data, id_from_token):
-        if int(data.user_id) != id_from_token:
-            return EditUser(ok=False, message="Access denied!")
-        user = db.query(User).filter_by(id=data.user_id).first()
+        user = db.query(User).filter_by(id=id_from_token).first()
         # check for '' and info duplication in account
         if data.user_name is not None and data.user_name != user.user_name:
             user.user_name = data.user_name
@@ -136,6 +132,7 @@ class RefreshToken(Mutation):
     """Returning new access_token by refresh_token"""
     class Arguments:
         user_id = ID(required=True)
+        # TODO передавать его в Autorization ???
         refresh_token = String(required=True)
 
     ok = Boolean()
@@ -156,8 +153,6 @@ class RefreshToken(Mutation):
 
 class ChangePassword(Mutation):
     class Arguments:
-        user_id = String(required=True)
-        token = String(required=True)
         old_password = String(required=True)
         new_password = String(required=True)
 
@@ -165,27 +160,23 @@ class ChangePassword(Mutation):
     message = String()
 
     @token_check
-    def mutate(self, info, user_id, token, old_password, new_password, id_from_token):
-        if int(user_id) != id_from_token:
-            return ChangePassword(ok=False, message="Password wasn't changed!")
-        else:
-            user = db.query(User).filter_by(id=id_from_token).first()
-            if old_password == au.verify_password(user.password_hash):
-                user.password_hash = au.get_password_hash(new_password)
-            return ChangePassword(ok=True, message="Password was changed!")
+    def mutate(self, info, old_password, new_password, id_from_token):
+        user = db.query(User).filter_by(id=id_from_token).first()
+        if old_password == au.verify_password(user.password_hash):
+            user.password_hash = au.get_password_hash(new_password)
+        return ChangePassword(ok=True, message="Password was changed!")
 
 
 class SendFriendRequest(Mutation):
     """Send request for friendhsip"""
     class Arguments:
         to_user_id = ID(required=True)
-        token = String(required=True)
 
     ok = Boolean()
     message = String()
 
     @token_check
-    def mutate(self, info, to_user_id, token, id_from_token):
+    def mutate(self, info, to_user_id, id_from_token):
         if db.query(FS).filter_by(user_id_1=id_from_token, user_id_2=to_user_id).first() is not None:
             SendFriendRequest(ok=False, message="You are already friends!")
         if db.query(FR).filter_by(user_id_from=id_from_token, user_id_to=to_user_id).first() is not None:
@@ -198,13 +189,12 @@ class SendFriendRequest(Mutation):
 class AcceptFriendRequest(Mutation):
     class Arguments:
         from_user_id = ID(required=True)
-        token = String(required=True)
 
     ok = Boolean()
     message = String()
 
     @token_check
-    def mutate(self, info, from_user_id, token, id_from_token):
+    def mutate(self, info, from_user_id, id_from_token):
         fr = db.query(FR).filter_by(user_id_from=from_user_id, user_id_to=id_from_token).first()
         if (fr is not None) and \
                 (db.query(FS).filter_by(user_id_1=id_from_token, user_id_2=from_user_id).first() is None):
@@ -220,13 +210,12 @@ class AcceptFriendRequest(Mutation):
 class RejectFriendRequest(Mutation):
     class Arguments:
         from_user_id = ID(required=True)
-        token = String(required=True)
 
     ok = Boolean()
     message = String()
 
     @token_check
-    def mutate(self, info, from_user_id, token, id_from_token):
+    def mutate(self, info, from_user_id, id_from_token):
         fr = db.query(FR).filter_by(user_id_from=from_user_id, user_id_to=id_from_token).first()
         if fr is not None:
             db.delete(fr)
@@ -240,13 +229,12 @@ class CancelFriendRequest(Mutation):
     class Arguments:
         to_user_id = ID(required=True)
         from_user_id = ID(required=True)
-        token = String(required=True)
 
     ok = Boolean()
     message = String()
 
     @token_check
-    def mutate(self, info, to_user_id, from_user_id, token, id_from_token):
+    def mutate(self, info, to_user_id, from_user_id, id_from_token):
         if id_from_token != int(from_user_id):
             return CancelFriendRequest(ok=False, message="Access denied!")
         fr = db.query(FR).filter_by(user_id_from=id_from_token, user_id_to=to_user_id).first()
@@ -260,17 +248,13 @@ class CancelFriendRequest(Mutation):
 
 class RemoveFromFriends(Mutation):
     class Arguments:
-        user_id = ID(required=True)
         friend_id = String(required=True)
-        token = String(required=True)
 
     ok = Boolean()
     message = String()
 
     @token_check
-    def mutate(self, info, user_id, friend_id, token, id_from_token):
-        if int(user_id) != id_from_token:
-            return RemoveFromFriends(ok=False, message="Access denied!")
+    def mutate(self, info, friend_id, id_from_token):
         fr1 = db.query(FS).filter_by(user_id_1=id_from_token, user_id_2=friend_id).first()
         fr2 = db.query(FS).filter_by(user_id_2=id_from_token, user_id_1=friend_id).first()
         if fr1 is not None and fr2 is not None:

@@ -1,5 +1,5 @@
 import graphene
-from fastapi import FastAPI, APIRouter, Request
+from fastapi import FastAPI, APIRouter, Request, Depends
 
 from graphql.execution.executors.asyncio import AsyncioExecutor
 from starlette.graphql import GraphQLApp
@@ -7,6 +7,7 @@ from app.queries import Query
 from app.mutations import Mutation
 from .database import SessionLocal, engine
 from .models import Base
+from .auth import AuthHandler
 
 # db = SessionLocal()
 
@@ -21,7 +22,7 @@ def create_app():
             query=Query,
             mutation=Mutation),
         executor_class=AsyncioExecutor,
-        graphiql=True
+        graphiql=True,
         )
 
     @router.api_route("/", methods=["GET", "POST"])
@@ -30,7 +31,7 @@ def create_app():
         return await gql_app.handle_graphql(request=request)
 
     app.include_router(router)
-    #app.include_router(router, dependencies=[Depends(AuthHandler.auth_wrapper)])
+    # app.include_router(router, dependencies=[Depends(AuthHandler.auth_wrapper, use_cache=False)])
 
     return app
 

@@ -14,7 +14,6 @@ class ItemAddInput(InputObjectType):
     access_level = Enum.from_enum(AccessLevelEnum)
     list_id = ID()
     degree = Enum.from_enum(DegreeEnum)
-    token = String()
 
 
 class ItemEditInput(InputObjectType):
@@ -26,7 +25,6 @@ class ItemEditInput(InputObjectType):
     access_level = String()
     list_id = ID()
     degree = String()
-    token = String()
 
 
 class AddItem(Mutation):
@@ -80,13 +78,12 @@ class DeleteItem(Mutation):
     class Arguments:
         item_id = ID()
         owner_id = ID()
-        token = String()
 
     ok = ID()
     message = String()
 
     @token_check
-    def mutate(self, info, item_id, owner_id, token, id_from_token):
+    def mutate(self, info, item_id, owner_id, id_from_token):
         if int(owner_id) != id_from_token:
             return DeleteItem(ok=False, message="Access denied!")
         item = db.query(Item).filter_by(id=item_id).first()
@@ -97,15 +94,14 @@ class DeleteItem(Mutation):
 
 class AddPictures(Mutation):
     class Arguments:
-        files = List(Upload(required=True))
-        token = String(required=True)
+        files = List(Upload)
         item_id = ID(required=True)
 
     ok = Boolean()
     message = String()
 
     @token_check
-    def mutate(self, info, files, token, item_id, id_from_token):
+    def mutate(self, info, files,  item_id, id_from_token):
         item = db.query(Item).filter_by(id=item_id).first()
         if item.owner_id != id_from_token:
             return AddPictures(ok=False, message="Access denied!")

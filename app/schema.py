@@ -64,7 +64,7 @@ class User(SQLAlchemyObjectType):
         pass
 
     @token_check
-    def resolve_items_owner(parent, info, token, id_from_token):
+    def resolve_items_owner(parent, info, id_from_token):
         item = db.query(Item).filter_by(owner_id=int(parent.id)).first()
         if item.access_level == 'ALL':
             return item
