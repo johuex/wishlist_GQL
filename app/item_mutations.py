@@ -1,6 +1,7 @@
-from graphene import ObjectType, Mutation, String, Boolean, Enum, ID, InputObjectType, List
+from graphene import ObjectType, Mutation, String, Boolean, Enum, ID, InputObjectType, List, Argument
 from graphene_file_upload.scalars import Upload
-from app.models import Item, AccessLevelEnum, StatusEnum, DegreeEnum
+from app.schema import AccessLevelQl, DegreeQl
+# from app.models import Item, access_level, degree
 from app.database import db_session as db
 from app.auth import token_required, last_seen_set, token_check
 from datetime import datetime
@@ -11,9 +12,10 @@ class ItemAddInput(InputObjectType):
     """Input for add item"""
     title = String(required=True)
     about = String()
-    access_level = Enum.from_enum(AccessLevelEnum)
+    # TODO Enum ???
+    access_level = AccessLevelQl()
     list_id = ID()
-    degree = Enum.from_enum(DegreeEnum)
+    degree = DegreeQl()
 
 
 class ItemEditInput(InputObjectType):
@@ -22,9 +24,9 @@ class ItemEditInput(InputObjectType):
     owner_id = ID()
     title = String()
     about = String()
-    access_level = String()
+    access_level = AccessLevelQl()
     list_id = ID()
-    degree = String()
+    degree = DegreeQl()
 
 
 class AddItem(Mutation):

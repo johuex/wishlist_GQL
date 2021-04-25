@@ -1,15 +1,31 @@
-from graphene import ObjectType, Mutation, ID, Boolean, String
+from graphene import ObjectType, Mutation, ID, Boolean, String, InputObjectType, Date
+from app.auth import token_required
+from app.database import db_session as db
+from app.models import Group, GroupUser, GroupList, ItemGroup
+from datetime import datetime
+
+
+class AddGroupInput(InputObjectType):
+    """Input for add group"""
+    title = String(required=True)
+    about = String()
+    access_level = String()
+    date = Date()
 
 
 class AddGroup(Mutation):
     class Arguments:
-        pass
+        data = AddGroupInput(required=True)
 
     ok = Boolean()
     message = String()
 
-    def mutate(self, info, data):
-        pass
+    @token_required
+    def mutate(self, info, data, id_from_token):
+        new_group_id = db.add(Group(title=data.title, about=data.about, access_level=data.access_level, date_creation=datetime.utcnow(),
+                     date=data.date))
+        db.add(GroupUser(group_id=new_group_id, user_id=id_from_token, role_in_group='ORGANIZER'))
+        return AddGroup(ok=True, message="Group has been added!")
 
 
 class EditGroup(Mutation):

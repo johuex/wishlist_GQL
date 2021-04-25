@@ -51,7 +51,7 @@ class Query(ObjectType):
             return item
         if item.access_level == 'NOBODY' and item.owner_id == id_from_token:
             return item
-        if item.access_level == 'FRIENDS' and db.query(FSDB).filter_by(user_id_1=item.owner.id,
+        if item.access_level == 'FRIENDS' and db.query(FSDB).filter_by(user_id_1=item.owner_id,
                                                                        user_id_2 = id_from_token).first():
             return item
         raise Exception("Access denied!")

@@ -36,17 +36,6 @@ role = ENUM(RoleEnum, name="role")
 status = ENUM(StatusEnum, name="status")
 
 
-'''
-RoleEnum = Enum('GUEST', 'ORGANIZER', 'FRIENDS', name="role")
-
-DegreeEnum = Enum('NOTWANT', 'WANT', 'REALLYWANT', 'NOT_STATED', name="degree")
-
-AccessLevelEnum = Enum('ALL', 'FRIENDS', 'NOBODY', name="access")
-
-StatusEnum = Enum('FREE', 'RESERVED', 'PERFORMED', name="status")
-'''
-
-
 class FriendRequests(Base):
     __tablename__ = "friends_requests"
     user_id_from = Column(Integer, ForeignKey("users.id"), primary_key=True)
@@ -94,7 +83,6 @@ class Wishlist(Base):
     title = Column(String(255), nullable=False)
     about = Column(String(1000))
     access_level = Column(access_level)
-    # access_level = Column(AccessLevelEnum, nullable=False)
     items = relationship("Item", foreign_keys="Item.list_id")
     user_owner = relationship("User", foreign_keys=[user_id])
 
@@ -105,16 +93,13 @@ class Item(Base):
     title = Column(String(255), nullable=False)
     about = Column(String(1000))
     access_level = Column(access_level, nullable=False)
-    # access_level = Column(AccessLevelEnum, nullable=False)
     status = Column(status, nullable=False)
-    # status = Column(StatusEnum, nullable=False)
     giver_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     owner_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     date_creation = Column(DateTime(), nullable=False)
     list_id = Column(Integer, ForeignKey('wishlist.id'))
     date_for_status = Column(DateTime(), nullable=False)
     degree = Column(degree)
-    # degree = Column(DegreeEnum)
     giver = relationship("User", foreign_keys=[giver_id])
     owner = relationship("User", foreign_keys=[owner_id])
     pictures = relationship("ItemPicture", cascade="all,delete", foreign_keys="ItemPicture.item_id")
@@ -133,7 +118,6 @@ class Group(Base):
     title = Column(String(255), nullable=False)
     about = Column(String(1000))
     access_level = Column(access_level, nullable=False)
-    # access_level = Column(AccessLevelEnum, nullable=False)
     date_creation = Column(DateTime(), nullable=False)
     date = Column(DateTime(), nullable=False)
     users = relationship("GroupUser", cascade="all,delete", foreign_keys="GroupUser.group_id")
@@ -162,7 +146,6 @@ class GroupUser(Base):
     group_id = Column(Integer, ForeignKey('group.id'), primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
     role_in_group = Column(role, nullable=False)
-    # role_in_group = Column(RoleEnum, nullable=False)
     users = relationship("User", foreign_keys=[user_id])
     groups = relationship("Group", foreign_keys=[group_id])
 
