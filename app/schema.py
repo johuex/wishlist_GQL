@@ -6,8 +6,9 @@ from app.models import User as UserModel, FriendRequests as FriendRequestsModel,
     ItemGroup as ItemGroupModel
 from app.auth import token_check
 from app.database import db_session as db
-
 from graphene_sqlalchemy import SQLAlchemyObjectType
+from app.s3 import *
+from app.config import Config
 
 
 class FriendRequests(SQLAlchemyObjectType):
@@ -125,6 +126,13 @@ class User(SQLAlchemyObjectType):
         if item.giver_id == id_from_token:
             return item
         raise Exception("Access denied!")
+
+    @token_check
+    def resolve_userpic(parent, info, id_from_token):
+        """return url to download picture"""
+        path = db.query(User).filter_by(id=id_from_token).first()
+        return download_file(Config.bucket + "users", path)
+
 
     @token_check
     def resolve_groups(parent, info, id_from_token):

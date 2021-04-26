@@ -1,9 +1,10 @@
 from graphene import ObjectType, Mutation, String, Boolean, Date, ID, InputObjectType
-
-
+from graphene_file_upload.scalars import Upload
 from app.models import User, FriendShip as FS, FriendRequests as FR
 from app.database import db_session as db
 from app.auth import au, token_required, last_seen_set, token_check
+from app.config import Config
+from app.s3 import *
 
 
 class UserInputRegistration(InputObjectType):
@@ -266,6 +267,27 @@ class RemoveFromFriends(Mutation):
             return RemoveFromFriends(ok=True, message="Friend hasn't been removed :-)")
 
 
+class UploadUserPicture(Mutation):
+    class Arguments:
+        user_pic = Upload(required=True)
+
+    ok = Boolean()
+    message = String()
+
+    @token_required
+    def mutate(self, info, user_pic, id_from_token):
+        if check_format(user_pic):
+            user = db.query(User).filter_by(id=id_from_token).first()
+            name = 'user_' + str(user.id)
+            url = f"https://" + Config.bucket + "s3.amazonaws.com" + name
+            upload_file(user_pic, Config.bucket, name)
+            user.userpic = name
+            db.commit()
+            return UploadUserPicture(ok=True, message="Userpic have been uploaded")
+        else:
+            return UploadUserPicture(ok=False, message="Userpic haven't been upload")
+
+
 class UserMutation(ObjectType):
     classic_register = ClassicRegisterUser.Field()
     fast_register = FastRegisterUser.Field()
@@ -278,3 +300,4 @@ class UserMutation(ObjectType):
     reject_friend_request = RejectFriendRequest.Field()
     cancel_friend_request = CancelFriendRequest.Field()
     remove_from_friends = RemoveFromFriends.Field()
+    upload_userpic = UploadUserPicture.Field()

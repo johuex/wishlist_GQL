@@ -1,5 +1,5 @@
 import graphene
-from fastapi import FastAPI, APIRouter, Request, Depends
+from fastapi import FastAPI, APIRouter, Request
 
 from graphql.execution.executors.asyncio import AsyncioExecutor
 from starlette.graphql import GraphQLApp

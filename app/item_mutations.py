@@ -1,11 +1,12 @@
 from graphene import ObjectType, Mutation, String, Boolean, Enum, ID, InputObjectType, List, Argument
 from graphene_file_upload.scalars import Upload
-from app.models import Item
+from app.models import Item, ItemPicture
 from app.schema import Item as ItemQl
 from app.database import db_session as db
 from app.auth import token_required, last_seen_set, token_check
 from datetime import datetime
-import boto3
+from app.s3 import *
+from app.config import Config
 
 
 class ItemAddInput(InputObjectType):
@@ -106,9 +107,25 @@ class AddPictures(Mutation):
         item = db.query(Item).filter_by(id=item_id).first()
         if item.owner_id != id_from_token:
             return AddPictures(ok=False, message="Access denied!")
-        s3 = boto3.resource('s3')
-        for pic in files:
-            s3.Bucket('4742').put_object(Key='название файла', Body=pic)
+        pictures = info.context.FILES
+        for pic in pictures:
+            i = 0
+            if check_format(pic):
+                i += 1
+                name = 'item_'+str(item.id)+str(i)
+                url = f"https://" + Config.bucket + "s3.amazonaws.com" + name
+                upload_file(pic, Config.bucket, name)
+                db.add(ItemPicture(item_id=item.id, path_to_picture=name))
+                db.commit()
+        return AddPictures(ok=True, messages="Pictures have been uploaded!")
+
+
+class RemovePictures(Mutation):
+    class Arguments:
+        url = String(required=True)
+
+    ok = Boolean()
+    message = String()
 
 
 class ItemMutation(ObjectType):
