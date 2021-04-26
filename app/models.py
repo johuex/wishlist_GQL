@@ -82,7 +82,7 @@ class Wishlist(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     title = Column(String(255), nullable=False)
     about = Column(String(1000))
-    access_level = Column(access_level)
+    access_level = Column(access_level, nullable=False)
     items = relationship("Item", foreign_keys="Item.list_id")
     user_owner = relationship("User", foreign_keys=[user_id])
 

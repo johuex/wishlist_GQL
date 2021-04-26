@@ -182,9 +182,9 @@ class UsersWishlistsAndItems(Interface):
     def resolve_type(cls, instance, info):
         pass
 
-
+'''
 RoleQl = Enum('role')
 AccessLevelQl = Enum('access')
 DegreeQl = Enum('degree')
 StatusQl = Enum('status')
-
+'''

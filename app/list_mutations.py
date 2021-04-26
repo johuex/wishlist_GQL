@@ -1,6 +1,6 @@
-from graphene import ObjectType, Mutation, String, Boolean, Field, ID, InputObjectType, List
+from graphene import ObjectType, Mutation, String, Boolean, Argument, ID, InputObjectType, List
 from app.models import Wishlist, Item
-from app.schema import Item as ItemQL
+from app.schema import Wishlist as WishlistQl
 from app.database import db_session as db
 from app.auth import token_required, last_seen_set, token_check
 
@@ -9,7 +9,7 @@ class ListAddInput(InputObjectType):
     """Input for add item"""
     title = String(required=True)
     about = String()
-    access_level = String(required=True)
+    access_level = Argument(WishlistQl._meta.fields['access_level'].type)
 
 
 class ListEditInput(InputObjectType):
@@ -17,7 +17,7 @@ class ListEditInput(InputObjectType):
     list_id = ID()
     title = String()
     about = String()
-    access_level = String()
+    access_level = Argument(WishlistQl._meta.fields['access_level'].type)
 
 
 class AddList(Mutation):

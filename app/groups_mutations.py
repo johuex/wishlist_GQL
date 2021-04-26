@@ -1,7 +1,8 @@
-from graphene import ObjectType, Mutation, ID, Boolean, String, InputObjectType, Date
+from graphene import ObjectType, Mutation, ID, Boolean, String, InputObjectType, Date, Argument
 from app.auth import token_required
 from app.database import db_session as db
 from app.models import Group, GroupUser, GroupList, ItemGroup
+from app.schema import Group as GroupQl
 from datetime import datetime
 
 
@@ -9,7 +10,7 @@ class AddGroupInput(InputObjectType):
     """Input for add group"""
     title = String(required=True)
     about = String()
-    access_level = String()
+    access_level = Argument(GroupQl._meta.fields['access_level'].type)
     date = Date()
 
 
