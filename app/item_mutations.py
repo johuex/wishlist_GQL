@@ -1,6 +1,6 @@
 from graphene import ObjectType, Mutation, String, Boolean, Enum, ID, InputObjectType, List, Argument
 from graphene_file_upload.scalars import Upload
-from app.models import Item, ItemPicture
+from app.models import Item, ItemPicture, DegreeEnum, AccessLevelEnum
 from app.schema import Item as ItemQl
 from app.database import db_session as db
 from app.auth import token_required, last_seen_set, token_check
@@ -39,11 +39,12 @@ class AddItem(Mutation):
     @token_required
     @last_seen_set
     def mutate(root, info, data, id_from_token):
-        if data.degree is None:
-            data.degree = "NOT_STATED"
-
-        db.add(Item(title=data.title, owner_id=id_from_token, about=data.about, access_level=data.access_level,
-                    list_id=data.list_id, degree=data.degree, status='FREE', date_for_status=datetime.utcnow(),
+        degree = DegreeEnum.NOTSTATED
+        a_level = AccessLevelEnum(data.access_level)
+        if data.degree is not None:
+            degree = DegreeEnum(data.degree)
+        db.add(Item(title=data.title, owner_id=id_from_token, about=data.about, access_level=a_level,
+                    list_id=data.list_id, degree=degree, status='FREE', date_for_status=datetime.utcnow(),
                     date_creation=datetime.utcnow()))
         db.commit()
         return AddItem(ok=True, message="Item added!")
@@ -127,6 +128,10 @@ class RemovePictures(Mutation):
     ok = Boolean()
     message = String()
 
+    @token_check
+    def mutate(self, info, url):
+        pass
+
 
 class ItemMutation(ObjectType):
     add_item = AddItem.Field()
@@ -134,4 +139,5 @@ class ItemMutation(ObjectType):
     delete_item = DeleteItem.Field()
     add_pictures = AddPictures.Field()
     remove_pictures = AddPictures.Field()
+    #set_giver_id = SetGiverId.Field()
 

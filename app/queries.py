@@ -1,7 +1,7 @@
 from graphene import ObjectType, relay, Field, ID, String
 from app.schema import User as UserQl, Wishlist as WishlistQl, Item as ItemQl, Group as GroupQl
 from app.models import User as UserDB, Wishlist as WishlistDB, Item as ItemDB, Group as GroupDB,\
-    FriendShip as FSDB
+    FriendShip as FSDB, AccessLevelEnum
 from app.database import db_session as db
 from app.auth import token_check, last_seen_set
 
@@ -34,11 +34,11 @@ class Query(ObjectType):
     @last_seen_set
     async def resolve_wishlist(parent, info, list_id, id_from_token):
         wishlist = db.query(WishlistDB).filter_by(id=int(list_id)).first()
-        if wishlist.access_level == 'ALL':
+        if wishlist.access_level == AccessLevelEnum.ALL:
             return wishlist
-        if wishlist.access_level == 'NOBODY' and wishlist.user_id == id_from_token:
+        if wishlist.access_level == AccessLevelEnum.NOBODY and wishlist.user_id == id_from_token:
             return wishlist
-        if wishlist.access_level == 'FRIENDS' and db.query(FSDB).filter_by(user_id_1=wishlist.user_id,
+        if wishlist.access_level == AccessLevelEnum.FRIENDS and db.query(FSDB).filter_by(user_id_1=wishlist.user_id,
                                                                        user_id_2=id_from_token).first():
             return wishlist
         raise Exception("Access denied!")
@@ -47,11 +47,11 @@ class Query(ObjectType):
     @last_seen_set
     async def resolve_item(parent, info, item_id, id_from_token):
         item = db.query(ItemDB).filter_by(id=int(item_id)).first()
-        if item.access_level == 'ALL':
+        if item.access_level == AccessLevelEnum.ALL:
             return item
-        if item.access_level == 'NOBODY' and item.owner_id == id_from_token:
+        if item.access_level == AccessLevelEnum.NOBODY and item.owner_id == id_from_token:
             return item
-        if item.access_level == 'FRIENDS' and db.query(FSDB).filter_by(user_id_1=item.owner_id,
+        if item.access_level == AccessLevelEnum.FRIENDS and db.query(FSDB).filter_by(user_id_1=item.owner_id,
                                                                        user_id_2 = id_from_token).first():
             return item
         raise Exception("Access denied!")

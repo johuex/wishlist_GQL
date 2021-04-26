@@ -3,7 +3,7 @@ from graphene import relay, Union, Enum, Interface, String, ID
 from app.models import User as UserModel, FriendRequests as FriendRequestsModel, FriendShip as FriendShipModel,\
     Item as ItemModel, Group as GroupModel, Wishlist as WishlistModel,\
     ItemPicture as ItemPictureModel, GroupUser as GroupUserModel, GroupList as GroupListModel, \
-    ItemGroup as ItemGroupModel
+    ItemGroup as ItemGroupModel, AccessLevelEnum
 from app.auth import token_check
 from app.database import db_session as db
 from graphene_sqlalchemy import SQLAlchemyObjectType
@@ -34,11 +34,11 @@ class Item(SQLAlchemyObjectType):
     @token_check
     def resolve_pictures(parent, info, id_from_token):
         # TODO add downloading pictures from S3
-        if parent.access_level == 'ALL':
+        if parent.access_level == AccessLevelEnum.ALL:
             return
-        if parent.access_level == 'NOBODY' and parent.owner_id == id_from_token:
+        if parent.access_level == AccessLevelEnum.NOBODY and parent.owner_id == id_from_token:
             return
-        if parent.access_level == 'FRIENDS' and db.query(FriendShipModel).filter_by(user_id_1=parent.owner_id,
+        if parent.access_level == AccessLevelEnum.FRIENDS and db.query(FriendShipModel).filter_by(user_id_1=parent.owner_id,
                                                                        user_id_2=id_from_token).first():
             return
         raise Exception("Access denied!")
@@ -52,13 +52,13 @@ class Wishlist(SQLAlchemyObjectType):
 
     @token_check
     def resolve_items(parent, info, id_from_token):
-        if parent.access_level == 'ALL':
-            return db.query(Item).filter_by(list_id=parent.id).all()
-        if parent.access_level == 'NOBODY' and parent.user_id == id_from_token:
-            return db.query(Item).filter_by(list_id=parent.id).all()
-        if parent.access_level == 'FRIENDS' and db.query(FriendShip).filter_by(user_id_1=parent.user_id,
+        if parent.access_level == AccessLevelEnum.ALL:
+            return db.query(ItemModel).filter_by(list_id=parent.id).all()
+        if parent.access_level == AccessLevelEnum.NOBODY and parent.user_id == id_from_token:
+            return db.query(ItemModel).filter_by(list_id=parent.id).all()
+        if parent.access_level == AccessLevelEnum.FRIENDS and db.query(FriendShipModel).filter_by(user_id_1=parent.user_id,
                                                                              user_id_2=id_from_token).first():
-            return db.query(Item).filter_by(list_id=parent.id).all()
+            return db.query(ItemModel).filter_by(list_id=parent.id).all()
         raise Exception("Access denied!")
 
 
@@ -90,12 +90,12 @@ class User(SQLAlchemyObjectType):
 
     @token_check
     def resolve_user_lists(parent, info, id_from_token):
-        wishlist = db.query(Wishlist).filter_by(user_id=parent.id).first()
-        if wishlist.access_level == 'ALL':
+        wishlist = db.query(WishlistModel).filter_by(user_id=parent.id).first()
+        if wishlist.access_level == AccessLevelEnum.ALL:
             return wishlist
-        if wishlist.access_level == 'NOBODY' and wishlist.user_id == id_from_token:
+        if wishlist.access_level == AccessLevelEnum.NOBODY and wishlist.user_id == id_from_token:
             return wishlist
-        if wishlist.access_level == 'FRIENDS' and db.query(FriendShip).filter_by(user_id_1=wishlist.user_id,
+        if wishlist.access_level == AccessLevelEnum.FRIENDS and db.query(FriendShipModel).filter_by(user_id_1=wishlist.user_id,
                                                                              user_id_2=id_from_token).first():
             return wishlist
         raise Exception("Access denied!")
@@ -110,19 +110,19 @@ class User(SQLAlchemyObjectType):
 
     @token_check
     def resolve_items_owner(parent, info, id_from_token):
-        item = db.query(Item).filter_by(owner_id=parent.id).first()
-        if item.access_level == 'ALL':
+        item = db.query(ItemModel).filter_by(owner_id=parent.id).first()
+        if item.access_level == AccessLevelEnum.ALL:
             return item
-        if item.access_level == 'NOBODY' and item.owner_id == id_from_token:
+        if item.access_level == AccessLevelEnum.NOBODY and item.owner_id == id_from_token:
             return item
-        if item.access_level == 'FRIENDS' and db.query(FriendShip).filter_by(user_id_1=item.owner.id,
+        if item.access_level == AccessLevelEnum.FRIENDS and db.query(FriendShipModel).filter_by(user_id_1=item.owner_id,
                                                                        user_id_2=id_from_token).first():
             return item
         raise Exception("Access denied!")
 
     @token_check
     def resolve_items_giver(parent, info, id_from_token):
-        item = db.query(Item).filter_by(owner_id=id_from_token).first()
+        item = db.query(ItemModel).filter_by(owner_id=id_from_token).first()
         if item.giver_id == id_from_token:
             return item
         raise Exception("Access denied!")
@@ -130,7 +130,7 @@ class User(SQLAlchemyObjectType):
     @token_check
     def resolve_userpic(parent, info, id_from_token):
         """return url to download picture"""
-        path = db.query(User).filter_by(id=id_from_token).first()
+        path = db.query(UserModel).filter_by(id=id_from_token).first()
         return download_file(Config.bucket + "users", path)
 
 
@@ -190,9 +190,3 @@ class UsersWishlistsAndItems(Interface):
     def resolve_type(cls, instance, info):
         pass
 
-'''
-RoleQl = Enum('role')
-AccessLevelQl = Enum('access')
-DegreeQl = Enum('degree')
-StatusQl = Enum('status')
-'''

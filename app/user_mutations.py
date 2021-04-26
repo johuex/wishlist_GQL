@@ -301,3 +301,4 @@ class UserMutation(ObjectType):
     cancel_friend_request = CancelFriendRequest.Field()
     remove_from_friends = RemoveFromFriends.Field()
     upload_userpic = UploadUserPicture.Field()
+
