@@ -110,14 +110,18 @@ class User(SQLAlchemyObjectType):
 
     @token_check
     def resolve_items_owner(parent, info, id_from_token):
-        item = db.query(ItemModel).filter_by(owner_id=parent.id).first()
-        if item.access_level == AccessLevelEnum.ALL:
-            return item
-        if item.access_level == AccessLevelEnum.NOBODY and item.owner_id == id_from_token:
-            return item
-        if item.access_level == AccessLevelEnum.FRIENDS and db.query(FriendShipModel).filter_by(user_id_1=item.owner_id,
+        response = list()
+        items = db.query(ItemModel).filter_by(owner_id=parent.id).all()
+        for item in items:
+            if item.access_level == AccessLevelEnum.ALL:
+                response.append(item)
+            if item.access_level == AccessLevelEnum.NOBODY and item.owner_id == id_from_token:
+                response.append(item)
+            if item.access_level == AccessLevelEnum.FRIENDS and db.query(FriendShipModel).filter_by(user_id_1=item.owner_id,
                                                                        user_id_2=id_from_token).first():
-            return item
+                response.append(item)
+        if len(response) > 0:
+            return response
         raise Exception("Access denied!")
 
     @token_check
