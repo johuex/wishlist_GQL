@@ -21,7 +21,6 @@ class ItemAddInput(InputObjectType):
 class ItemEditInput(InputObjectType):
     """Input for edit item"""
     item_id = ID()
-    owner_id = ID()
     title = String()
     about = String()
     access_level = Argument(ItemQl._meta.fields['access_level'].type)
@@ -60,9 +59,9 @@ class EditItem(Mutation):
     @token_required
     @last_seen_set
     def mutate(root, info, data, id_from_token):
-        if int(data.owner_id) != id_from_token:
-            return EditItem(ok=False, message="Access denied!")
         item = db.query(Item).filter_by(id=data.item_id).first()
+        if int(item.owner_id) != id_from_token:
+            return EditItem(ok=False, message="Access denied!")
         if data.title is not None and data.title != item.title:
             item.title = data.title
         if data.about is not None and data.about != item.about:
