@@ -90,7 +90,6 @@ def token_check(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         id_from_token = 0
-        # TODO check path to header Authorization
         token = args[1].context['request'].headers.raw[5][1][4:].decode("utf-8")
         if token is not None:
             id_from_token = au.decode_token(token)
@@ -98,14 +97,14 @@ def token_check(func):
     return wrapper
 
 
-# TODO check last_seen kwargs
 def last_seen_set(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         if kwargs.get("id_from_token") is not None and kwargs["id_from_token"] is not None:
-            user = db.query(User).filter_by(id=kwargs["id_from_token"]).first()
-            user.last_seen = datetime.utcnow()
-            db.commit()
+            if kwargs["id_from_token"] != 0:
+                user = db.query(User).filter_by(id=kwargs["id_from_token"]).first()
+                user.last_seen = datetime.utcnow()
+                db.commit()
 
         return func(*args, **kwargs)
 

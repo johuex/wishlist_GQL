@@ -43,6 +43,22 @@ class Item(SQLAlchemyObjectType):
             return
         raise Exception("Access denied!")
 
+    @token_check
+    def resolve_in_wishlist(parent, info, id_from_token):
+        return db.query(WishlistModel).filter_by(id=parent.list_id).first()
+
+    @token_check
+    def resolve_giver(parent, info, id_from_token):
+        return db.query(UserModel).filter_by(id=parent.giver_id).first()
+
+    @token_check
+    def resolve_owner(parent, info, id_from_token):
+        return db.query(UserModel).filter_by(id=parent.owner_id).first()
+
+    @token_check
+    def resolve_in_groups(parent, info, id_from_token):
+        return db.query(ItemGroupModel).filter_by(item_id=parent.id).all()
+
 
 class Wishlist(SQLAlchemyObjectType):
     class Meta:
@@ -58,8 +74,12 @@ class Wishlist(SQLAlchemyObjectType):
             return db.query(ItemModel).filter_by(list_id=parent.id).all()
         if parent.access_level == AccessLevelEnum.FRIENDS and db.query(FriendShipModel).filter_by(user_id_1=parent.user_id,
                                                                              user_id_2=id_from_token).first():
-            return db.query(ItemModel).filter_by(list_id=parent.id).all()
+            return db.query(ItemModel).filter_by(list_id=parent.id, access_level=AccessLevelEnum.FRIENDS).all()
         raise Exception("Access denied!")
+
+    @token_check
+    def resolve_in_groups(parent, info, id_from_token):
+        return db.query(GroupListModel).filter_by(wishlist_id=parent.id).all()
 
 
 class Group(SQLAlchemyObjectType):
@@ -90,14 +110,21 @@ class User(SQLAlchemyObjectType):
 
     @token_check
     def resolve_user_lists(parent, info, id_from_token):
-        wishlist = db.query(WishlistModel).filter_by(user_id=parent.id).first()
-        if wishlist.access_level == AccessLevelEnum.ALL:
-            return wishlist
-        if wishlist.access_level == AccessLevelEnum.NOBODY and wishlist.user_id == id_from_token:
-            return wishlist
-        if wishlist.access_level == AccessLevelEnum.FRIENDS and db.query(FriendShipModel).filter_by(user_id_1=wishlist.user_id,
-                                                                             user_id_2=id_from_token).first():
-            return wishlist
+        response = list()
+        wishlists = db.query(ItemModel).filter_by(user__id=parent.id).all()
+        if len(wishlists) == 0:
+            return wishlists
+        for wlist in wishlists:
+            if wlist.access_level == AccessLevelEnum.ALL:
+                response.append(wlist)
+            if wlist.access_level == AccessLevelEnum.NOBODY and wlist.owner_id == id_from_token:
+                response.append(wlist)
+            if wlist.access_level == AccessLevelEnum.FRIENDS and db.query(FriendShipModel).filter_by(
+                    user_id_1=wlist.owner_id,
+                    user_id_2=id_from_token).first():
+                response.append(wlist)
+        if len(response) > 0:
+            return response
         raise Exception("Access denied!")
 
     @token_check
@@ -111,7 +138,9 @@ class User(SQLAlchemyObjectType):
     @token_check
     def resolve_items_owner(parent, info, id_from_token):
         response = list()
-        items = db.query(ItemModel).filter_by(owner_id=parent.id).all()
+        items = db.query(ItemModel).filter_by(owner_id=parent.id, list_id=None).all()
+        if len(items) == 0:
+            return items
         for item in items:
             if item.access_level == AccessLevelEnum.ALL:
                 response.append(item)
@@ -127,6 +156,8 @@ class User(SQLAlchemyObjectType):
     @token_check
     def resolve_items_giver(parent, info, id_from_token):
         item = db.query(ItemModel).filter_by(owner_id=id_from_token).first()
+        if len(item) == 0:
+            return item
         if item.giver_id == id_from_token:
             return item
         raise Exception("Access denied!")
@@ -156,6 +187,14 @@ class GroupUser(SQLAlchemyObjectType):
         model = GroupUserModel
         interfaces = (relay.Node,)
 
+    @token_check
+    def resolve_users(aprent, info, id_from_token):
+        pass
+
+    @token_check
+    def resolve_group(aprent, info, id_from_token):
+        pass
+
 
 class GroupList(SQLAlchemyObjectType):
     class Meta:
@@ -163,12 +202,28 @@ class GroupList(SQLAlchemyObjectType):
         model = GroupListModel
         interfaces = (relay.Node,)
 
+    @token_check
+    def resolve_lists(aprent, info, id_from_token):
+        pass
+
+    @token_check
+    def resolve_group(aprent, info, id_from_token):
+        pass
+
 
 class ItemGroup(SQLAlchemyObjectType):
     class Meta:
         description = "Table for items in groups"
         model = ItemGroupModel
         interfaces = (relay.Node,)
+
+    @token_check
+    def resolve_item(aprent, info, id_from_token):
+        pass
+
+    @token_check
+    def resolve_group(aprent, info, id_from_token):
+        pass
 
 
 class Search(Interface):

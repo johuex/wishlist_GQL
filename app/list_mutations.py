@@ -1,5 +1,5 @@
 from graphene import ObjectType, Mutation, String, Boolean, Argument, ID, InputObjectType, List
-from app.models import Wishlist, Item
+from app.models import Wishlist, Item, AccessLevelEnum
 from app.schema import Wishlist as WishlistQl
 from app.database import db_session as db
 from app.auth import token_required, last_seen_set, token_check
@@ -31,7 +31,8 @@ class AddList(Mutation):
     @token_required
     @last_seen_set
     def mutate(root, info, data, id_from_token):
-        db.add(Wishlist(title=data.title, user_id=id_from_token, about=data.about, access_level=data.access_level))
+        a_level = AccessLevelEnum(data.access_level)
+        db.add(Wishlist(title=data.title, user_id=id_from_token, about=data.about, access_level=a_level))
         db.commit()
         return AddList(ok=True, message="Wishlist added!")
 
@@ -48,11 +49,20 @@ class EditList(Mutation):
     @last_seen_set
     def mutate(root, info, data, id_from_token):
         wishlist = db.query(Wishlist).filter_by(id=data.item_id)
-        if wishlist.user_id == id_from_token:
-            wishlist.title = data.item_id
+        if wishlist.user_id != id_from_token:
+            return EditList(ok=False, message="Access denied!")
+
+        if data.title is not None and data.title != wishlist.title:
+            wishlist.title = data.title
+        if data.about is not None and data.about != wishlist.about:
             wishlist.about = data.about
-            wishlist.access_level = data.access_level
-            db.commit()
+        if data.access_level is not None and data.access_level != wishlist.access_level:
+            a_level = AccessLevelEnum(data.access_level)
+            wishlist.access_level = a_level
+            items_in_list = db.query(Item).filter_by(list_id=wishlist.id).all()
+            for item in items_in_list:
+                item.access_level = a_level
+        db.commit()
         return EditList(ok=True, message="Wishlist edited!")
 
 
@@ -91,6 +101,7 @@ class AddItemsToList(Mutation):
     ok = Boolean()
     message = String()
 
+    @token_check
     def mutate(self, info, list_id, items_id, id_from_token):
         wlist = db.query(Wishlist).filter_by(id=list_id).first()
         if wlist.user_id != id_from_token:
@@ -98,6 +109,7 @@ class AddItemsToList(Mutation):
         for item_id in items_id:
             item = db.query(Item).filter_by(id=item_id).first()
             item.list_id = list_id
+            item.access_level = wlist.access_level
             db.commit()
         return AddItemsToList(ok=True, message="Items were added to wishlist!")
 
@@ -111,6 +123,7 @@ class DeleteItemsFromList(Mutation):
     ok = Boolean()
     message = String()
 
+    @token_check
     def mutate(self, info, list_id, items_id, id_from_token):
         wlist = db.query(Wishlist).filter_by(id=list_id).first()
         if wlist.user_id != id_from_token:
@@ -118,6 +131,7 @@ class DeleteItemsFromList(Mutation):
         for item_id in items_id:
             item = db.query(Item).filter_by(id=item_id).first()
             item.list_id = None
+            item.access_level = AccessLevelEnum.NOBODY
             db.commit()
         return DeleteItemsFromList(ok=True, message="Items were deleted from wishlist and were pasted to default wishlist!")
 

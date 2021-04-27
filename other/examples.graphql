@@ -43,7 +43,7 @@ mutation {
   }
 }
 
-???
+
 query {
   user(userId: "1"){
     itemsOwner{
@@ -55,13 +55,15 @@ query {
     }
   }
 }
-???
+
 query {
-  user(userId: "1"){
-    itemsOwner($token: token){
+  wishlist(listId: "1"){
+    title
+    items{
       edges{
         node{
           title
+          dateCreation
         }
       }
     }

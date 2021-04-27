@@ -14,17 +14,6 @@ class Query(ObjectType):
     wishlist = Field(WishlistQl, list_id=ID(required=True), description="Return wishlist by ID")
     item = Field(ItemQl, item_id=ID(required=True), description="Return item by ID")
     group = Field(GroupQl, group_id=ID(required=True), description="Return group by ID")
-    '''
-    # it's an example for working with token
-    async def resolve_user(parent, info, user_id, token):
-        """return user by id"""
-        id_from_token = int(au.decode_token(token))
-        if int(user_id) == id_from_token:
-            return db.query(UserDB).filter_by(id=user_id).first()
-        else:
-            # TODO сделать грамотный вывод об ошибке в ???
-            return error_response(401, 'Access denied')
-    '''
 
     @last_seen_set
     async def resolve_user(parent, info, user_id):

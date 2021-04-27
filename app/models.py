@@ -85,6 +85,7 @@ class Wishlist(Base):
     access_level = Column(access_level, nullable=False)
     items = relationship("Item", foreign_keys="Item.list_id")
     user_owner = relationship("User", foreign_keys=[user_id])
+    in_groups = relationship("GroupList", foreign_keys="GroupList.wishlist_id")
 
 
 class Item(Base):
@@ -104,6 +105,7 @@ class Item(Base):
     owner = relationship("User", foreign_keys=[owner_id])
     pictures = relationship("ItemPicture", cascade="all,delete", foreign_keys="ItemPicture.item_id")
     in_wishlist = relationship("Wishlist", foreign_keys=[list_id])
+    in_groups = relationship("ItemGroup", foreign_keys="ItemGroup.item_id")
 
 
 class ItemPicture(Base):

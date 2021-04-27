@@ -68,11 +68,11 @@ class EditItem(Mutation):
         if data.about is not None and data.about != item.about:
             item.about = data.about
         if data.access_level is not None and data.access_level != item.access_level:
-            item.access_level = data.access_level
+            item.access_level = AccessLevelEnum(data.access_level)
         if data.list_id is not None and data.list_id != item.list_id:
             item.list_id = data.list_id
         if data.degree is not None and data.degree != item.degree:
-            item.degree = data.degree
+            item.degree = AccessLevelEnum(data.degree)
         db.commit()
         return EditItem(ok=True, message="Item edited!")
 
@@ -139,5 +139,6 @@ class ItemMutation(ObjectType):
     delete_item = DeleteItem.Field()
     add_pictures = AddPictures.Field()
     remove_pictures = AddPictures.Field()
-    #set_giver_id = SetGiverId.Field()
+    # set_giver_id = SetGiverId.Field()
+    # item_performed = ItemPerformed.Field()
 
