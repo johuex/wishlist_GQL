@@ -1,6 +1,5 @@
 import jwt
-from fastapi import HTTPException, Security
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import HTTPException
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from app.config import Config

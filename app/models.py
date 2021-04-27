@@ -122,6 +122,7 @@ class Group(Base):
     access_level = Column(access_level, nullable=False)
     date_creation = Column(DateTime(), nullable=False)
     date = Column(DateTime(), nullable=False)
+    admin_id = Column(Integer, ForeignKey('group_user.user_id'))
     users = relationship("GroupUser", cascade="all,delete", foreign_keys="GroupUser.group_id")
     items = relationship("ItemGroup", cascade="all,delete", foreign_keys="ItemGroup.group_id")
     lists = relationship("GroupList", cascade="all,delete", foreign_keys="GroupList.group_id")
@@ -152,4 +153,4 @@ class GroupUser(Base):
     groups = relationship("Group", foreign_keys=[group_id])
 
 
-Base.metadata.create_all(engine)
+#Base.metadata.create_all(engine)

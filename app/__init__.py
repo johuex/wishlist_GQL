@@ -9,10 +9,6 @@ from .database import SessionLocal, engine
 from .models import Base
 from .auth import AuthHandler
 
-# db = SessionLocal()
-
-# models.Base.metadata.create_all(bind=engine)
-
 
 def create_app():
     router = APIRouter()
@@ -31,7 +27,6 @@ def create_app():
         return await gql_app.handle_graphql(request=request)
 
     app.include_router(router)
-    # app.include_router(router, dependencies=[Depends(AuthHandler.auth_wrapper, use_cache=False)])
 
     return app
 
