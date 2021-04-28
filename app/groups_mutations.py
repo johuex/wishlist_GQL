@@ -169,6 +169,25 @@ class AddUsers(Mutation):
         return AddUsers(ok=True, message="Access denied!")
 
 
+class AddOrganizer(Mutation):
+    class Arguments:
+        group_id = ID(required=True)
+        user_id = ID(required=True)
+
+    @token_check
+    def mutate(self, info, group_id, user_id, id_from_token):
+        group = db.query(Group).filter_by(id=group_id).first()
+        admin_role = db.query(GroupUser.role_in_group).filter_by(user_id=group.admin_id, group_id=group_id).first()
+        user_role = db.query(GroupUser.role_in_group).filter_by(user_id=id_from_token, group_id=group_id).first()
+        if admin_role == RoleEnum.ORGANIZER:
+            if user_role is not None and user_role == RoleEnum.ORGANIZER:
+                db.add(GroupUser(group_id=group_id, user_id=user_id, role_in_group=RoleEnum.ORGANIZER))
+                db.commit()
+                return AddOrganizer(ok=True, message="Users have been added!")
+
+        return AddOrganizer(ok=True, message="Only admin with role ORGANIZER can add ORGANIZER!")
+
+
 class GroupMutation(ObjectType):
     add_group = AddGroup.Field()
     edit_group = EditGroup.Field()
@@ -176,3 +195,4 @@ class GroupMutation(ObjectType):
     add_items_to_group = AddItems.Field()
     add_lists_to_group = AddLists.Field()
     add_users_to_group = AddUsers.Field()
+    add_organizer = AddOrganizer.Field()

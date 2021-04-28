@@ -1,6 +1,6 @@
 from graphene import ObjectType, Mutation, String, Boolean, Enum, ID, InputObjectType, List, Argument
 from graphene_file_upload.scalars import Upload
-from app.models import Item, ItemPicture, DegreeEnum, AccessLevelEnum
+from app.models import Item, ItemPicture, DegreeEnum, AccessLevelEnum, StatusEnum
 from app.schema import Item as ItemQl
 from app.database import db_session as db
 from app.auth import token_required, last_seen_set, token_check
@@ -132,12 +132,44 @@ class RemovePictures(Mutation):
         pass
 
 
+class SetGiverId(Mutation):
+    class Arguments:
+        item_id = ID(required=True)
+
+    ok = Boolean()
+    message = String()
+
+    @token_check
+    def mutate(self, info,item_id, id_from_token):
+        item = db.query(Item).filter_by(id=item_id).first()
+        if item.giver_id is not None:
+            return SetGiverId(ok=False, message="This item has already reserved!")
+        item.giver_id = id_from_token
+        item.status = StatusEnum.RESERVED
+        db.commit()
+        return SetGiverId(ok=True, message="Item was reserved!!")
+
+
+class ItemPerformed(Mutation):
+    class Arguments:
+        item_id = ID(required=True)
+
+    @token_check
+    def mutate(self, info, item_id, id_from_token):
+        item = db.query(Item).filter_by(id=item_id).first()
+        if item.owner_id != id_from_token:
+            return ItemPerformed(ok=False, message="Access denied!!")
+        item.status = StatusEnum.PERFORMED
+        db.commit()
+        return ItemPerformed(ok=True, message="Item was performed!")
+
+
 class ItemMutation(ObjectType):
     add_item = AddItem.Field()
     edit_item = EditItem.Field()
     delete_item = DeleteItem.Field()
     add_pictures = AddPictures.Field()
     remove_pictures = AddPictures.Field()
-    # set_giver_id = SetGiverId.Field()
-    # item_performed = ItemPerformed.Field()
+    set_giver_id = SetGiverId.Field()
+    item_performed = ItemPerformed.Field()
 

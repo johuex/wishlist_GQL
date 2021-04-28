@@ -106,7 +106,7 @@ class User(SQLAlchemyObjectType):
         description = 'Table of Users'
         model = UserModel
         interfaces = (relay.Node,)  # interfaces where Users used
-        exclude_fields = ('password_hash', 'token', 'refresh_token', 'users_lists')
+        exclude_fields = ('password_hash', 'token', 'refresh_token', 'users_lists', 'email')
 
     @token_check
     def resolve_user_lists(parent, info, id_from_token):
@@ -129,11 +129,13 @@ class User(SQLAlchemyObjectType):
 
     @token_check
     def resolve_friend_requests(parent, info, id_from_token):
-        return db.query(FriendRequestsModel).filter_by(user_id_to=id_from_token).all()
+        if parent.id == id_from_token:
+            return db.query(FriendRequestsModel).filter_by(user_id_to=id_from_token).all()
+        return []
 
     @token_check
     def resolve_friends(parent, info, id_from_token):
-        return db.query(FriendShipModel).filter_by(user_id_1=id_from_token).all()
+        return db.query(FriendShipModel.user_id_2).filter_by(user_id_1=parent.id).all()
 
     @token_check
     def resolve_items_owner(parent, info, id_from_token):
