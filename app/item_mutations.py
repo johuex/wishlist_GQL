@@ -154,6 +154,9 @@ class ItemPerformed(Mutation):
     class Arguments:
         item_id = ID(required=True)
 
+    ok = Boolean()
+    message = String()
+
     @token_check
     def mutate(self, info, item_id, id_from_token):
         item = db.query(Item).filter_by(id=item_id).first()

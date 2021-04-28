@@ -174,6 +174,9 @@ class AddOrganizer(Mutation):
         group_id = ID(required=True)
         user_id = ID(required=True)
 
+    ok = Boolean()
+    message = String()
+
     @token_check
     def mutate(self, info, group_id, user_id, id_from_token):
         group = db.query(Group).filter_by(id=group_id).first()
