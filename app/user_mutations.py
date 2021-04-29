@@ -7,7 +7,8 @@ from app.database import db_session as db
 from app.auth import au, token_required, last_seen_set, token_check
 from app.config import Config
 from app.s3 import *
-from app.email_server import e_host
+#from app.email_server import e_host
+e_host=0
 
 
 class UserInputRegistration(InputObjectType):
