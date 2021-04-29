@@ -33,14 +33,24 @@ class Item(SQLAlchemyObjectType):
 
     @token_check
     def resolve_pictures(parent, info, id_from_token):
-        # TODO add downloading pictures from S3
+        responce = list()
         if parent.access_level == AccessLevelEnum.ALL:
-            return
+            items = db.query(ItemPicture).filter_by(item_id=parent.id).all()
+            for pic in items:
+                responce.append(download_file(Config.bucket, pic.path_to_picture))
+            return responce
         if parent.access_level == AccessLevelEnum.NOBODY and parent.owner_id == id_from_token:
-            return
+            items = db.query(ItemPicture).filter_by(item_id=parent.id).all()
+            for pic in items:
+                responce.append(download_file(Config.bucket, pic.path_to_picture))
+            return responce
         if parent.access_level == AccessLevelEnum.FRIENDS and db.query(FriendShipModel).filter_by(user_id_1=parent.owner_id,
                                                                        user_id_2=id_from_token).first():
-            return
+            items = db.query(ItemPicture).filter_by(item_id=parent.id).all()
+            for pic in items:
+                responce.append(download_file(Config.bucket, pic.path_to_picture))
+            return responce
+
         raise Exception("Access denied!")
 
     @token_check
@@ -164,11 +174,10 @@ class User(SQLAlchemyObjectType):
             return item
         raise Exception("Access denied!")
 
-    @token_check
-    def resolve_userpic(parent, info, id_from_token):
+    def resolve_userpic(parent, info):
         """return url to download picture"""
-        path = db.query(UserModel).filter_by(id=id_from_token).first()
-        return download_file(Config.bucket + "users", path)
+        user = db.query(UserModel).filter_by(id=parent.id).first()
+        return download_file(Config.bucket, user.userpic)
 
 
     @token_check

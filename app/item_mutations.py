@@ -107,29 +107,39 @@ class AddPictures(Mutation):
         item = db.query(Item).filter_by(id=item_id).first()
         if item.owner_id != id_from_token:
             return AddPictures(ok=False, message="Access denied!")
-        pictures = info.context.FILES
-        for pic in pictures:
-            i = 0
+        i = 0
+        for pic in files:
             if check_format(pic):
                 i += 1
-                name = 'item_'+str(item.id)+str(i)
-                url = f"https://" + Config.bucket + "s3.amazonaws.com" + name
-                upload_file(pic, Config.bucket, name)
-                db.add(ItemPicture(item_id=item.id, path_to_picture=name))
-                db.commit()
+                name = 'items/item_'+str(item.id)+'_'+str(i)
+                if upload_file(pic, Config.bucket, name):
+                    db.add(ItemPicture(item_id=item.id, path_to_picture=name))
+                    db.commit()
+                else:
+                    return AddPictures(ok=False, message="Pictures haven't been uploaded!")
+            else:
+                return AddPictures(ok=False, message="Only pictures (.png, .jpeg, .bmp) can be downloaded!")
         return AddPictures(ok=True, messages="Pictures have been uploaded!")
 
 
 class RemovePictures(Mutation):
     class Arguments:
-        url = String(required=True)
+        urls = List(String)
 
     ok = Boolean()
     message = String()
 
     @token_check
-    def mutate(self, info, url):
-        pass
+    def mutate(self, info, urls, id_from_token):
+        if len(urls) == 0:
+            return RemovePictures(ok=False, message="No URLs to delete pictures!")
+        for pic in urls:
+            item_path = db.query(ItemPicture).filter_by(path_to_picture=pic).first()
+            item = db.query(Item).filter_by(id = item_path.item_id).first()
+            if delete_file(Config.bucket, item_path.path_to_picture):
+                db.delete(item_path)
+                db.commit()
+        return RemovePictures(ok=True, message="Pictures have been deleted!")
 
 
 class SetGiverId(Mutation):

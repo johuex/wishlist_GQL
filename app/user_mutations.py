@@ -278,14 +278,12 @@ class UploadUserPicture(Mutation):
     def mutate(self, info, user_pic, id_from_token):
         if check_format(user_pic):
             user = db.query(User).filter_by(id=id_from_token).first()
-            name = 'user_' + str(user.id)
-            url = f"https://" + Config.bucket + "s3.amazonaws.com" + name
-            upload_file(user_pic, Config.bucket, name)
-            user.userpic = name
-            db.commit()
-            return UploadUserPicture(ok=True, message="Userpic have been uploaded")
-        else:
-            return UploadUserPicture(ok=False, message="Userpic haven't been upload")
+            name = 'users/user_' + str(user.id)
+            if upload_file(user_pic, Config.bucket, name):
+                user.userpic = name
+                db.commit()
+                return UploadUserPicture(ok=True, message="Userpic have been uploaded")
+        return UploadUserPicture(ok=False, message="Userpic haven't been upload")
 
 
 class UserMutation(ObjectType):
