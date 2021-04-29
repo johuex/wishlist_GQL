@@ -1,0 +1,7 @@
+Dear ${PERSON_NAME},
+
+It is your code for confirm your activity in our app:
+${CODE}
+
+Best Regards,
+Wishlist Team

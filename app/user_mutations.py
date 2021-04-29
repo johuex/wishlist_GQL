@@ -1,3 +1,5 @@
+import random
+
 from graphene import ObjectType, Mutation, String, Boolean, Date, ID, InputObjectType
 from graphene_file_upload.scalars import Upload
 from app.models import User, FriendShip as FS, FriendRequests as FR
@@ -5,6 +7,7 @@ from app.database import db_session as db
 from app.auth import au, token_required, last_seen_set, token_check
 from app.config import Config
 from app.s3 import *
+from app.email_server import e_host
 
 
 class UserInputRegistration(InputObjectType):
@@ -64,7 +67,9 @@ class FastRegisterUser(Mutation):
     def mutate(root, info, user_data):
         if db.query(User).filter_by(email=user_data.email).first():
             return ClassicRegisterUser(ok=False, message="An account is already registered for this mailbox")
-        db.add(User(email=user_data.email, user_name=user_data.user_name))
+        code = random.randint(100000, 999999)
+        e_host.send_email(user_data.email, "Reset Password", user_data.user_name, "other/fast_registration.txt", code)
+        db.add(User(email=user_data.email, user_name=user_data.user_name, password_hash=au.get_password_hash(code)))
         db.commit()
         return ClassicRegisterUser(ok=True, message="Registration done!")
 
@@ -163,8 +168,9 @@ class ChangePassword(Mutation):
     @token_check
     def mutate(self, info, old_password, new_password, id_from_token):
         user = db.query(User).filter_by(id=id_from_token).first()
-        if old_password == au.verify_password(user.password_hash):
-            user.password_hash = au.get_password_hash(new_password)
+        if old_password != au.verify_password(user.password_hash):
+            return ChangePassword(ok=False, message="Old password is incorrect!")
+        user.password_hash = au.get_password_hash(new_password)
         return ChangePassword(ok=True, message="Password was changed!")
 
 
@@ -286,13 +292,28 @@ class UploadUserPicture(Mutation):
         return UploadUserPicture(ok=False, message="Userpic haven't been upload")
 
 
+class ResetPassword(Mutation):
+    ok = Boolean()
+    message = String()
+
+    @token_check
+    def mutate(self, info, id_from_token):
+        user = db.query(User).filter_by().first()
+        code = random.randint(100000, 999999)
+        e_host.send_email(user.email, "Reset Password", user.user_name, "other/reset_password.txt", code)
+        user.password_hash = au.get_password_hash(code)
+        db.commit()
+        return ResetPassword(ok=True, message="Confirm email send to your email!")
+
+
 class UserMutation(ObjectType):
     classic_register = ClassicRegisterUser.Field()
-    fast_register = FastRegisterUser.Field()
+    # fast_register = FastRegisterUser.Field()
     authorization = LoginUser.Field()
     refresh_access_token = RefreshToken.Field()
     edit_user = EditUser.Field()
     change_password = ChangePassword.Field()
+    reset_password = ResetPassword.Field()
     send_friend_request = SendFriendRequest.Field()
     accept_friend_request = AcceptFriendRequest.Field()
     reject_friend_request = RejectFriendRequest.Field()
