@@ -30,10 +30,16 @@ class StatusEnum(PyEnum):
     PERFORMED = 2
 
 
+class GroupAccessEnum(PyEnum):
+    OPEN = 0
+    CLOSE = 1
+
+
 access_level = ENUM(AccessLevelEnum, name="access")
 degree = ENUM(DegreeEnum, name="degree")
 role = ENUM(RoleEnum, name="role")
 status = ENUM(StatusEnum, name="status")
+a_group = ENUM(GroupAccessEnum, name="group_access")
 
 
 class FriendRequests(Base):
@@ -119,10 +125,10 @@ class Group(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(255), nullable=False)
     about = Column(String(1000))
-    access_level = Column(access_level, nullable=False)
+    access_level = Column(a_group, nullable=False)
     date_creation = Column(DateTime(), nullable=False)
     date = Column(DateTime(), nullable=False)
-    admin_id = Column(Integer, ForeignKey('group_user.user_id'))
+    admin_id = Column(Integer, ForeignKey('users.id'))
     users = relationship("GroupUser", cascade="all,delete", foreign_keys="GroupUser.group_id")
     items = relationship("ItemGroup", cascade="all,delete", foreign_keys="ItemGroup.group_id")
     lists = relationship("GroupList", cascade="all,delete", foreign_keys="GroupList.group_id")
@@ -153,4 +159,4 @@ class GroupUser(Base):
     groups = relationship("Group", foreign_keys=[group_id])
 
 
-#Base.metadata.create_all(engine)
+Base.metadata.create_all(engine)

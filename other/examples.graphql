@@ -21,6 +21,7 @@ mutation {
     ok
     message
     token
+    refreshToken
   }
 }
 
@@ -35,8 +36,7 @@ mutation {
 mutation {
 	addItem(data: {title: "Want app to work",
   							 about: "Test item",
-  							 accessLevel: ALL,
-  							 token: ""
+  							 accessLevel: ALL
   }){
   ok
   message
@@ -64,6 +64,41 @@ query {
         node{
           title
           dateCreation
+        }
+      }
+    }
+  }
+}
+
+mutation{
+  addGroup(data: {title: "First group", accessLevel: OPEN, date: "2021-04-30", adminRole: ORGANIZER})
+    {
+    ok
+    message
+  }
+}
+
+
+query{
+  user(userId: "1"){
+    itemsOwner{
+      edges{
+        node{
+          title
+        }
+      }
+    }
+    userLists{
+      edges{
+        node{
+          title
+          items{
+            edges{
+              node{
+                title
+              }
+            }
+          }
         }
       }
     }

@@ -1,7 +1,7 @@
 from graphene import ObjectType, Mutation, ID, Boolean, String, InputObjectType, Date, Argument, List
 from app.auth import token_required, token_check
 from app.database import db_session as db
-from app.models import Group, GroupUser, GroupList, ItemGroup, AccessLevelEnum, RoleEnum, Item, Wishlist
+from app.models import Group, GroupUser, GroupList, ItemGroup, GroupAccessEnum, RoleEnum, Item, Wishlist
 from app.schema import Group as GroupQl, GroupUser as GroupUserQl, Item as ItemQl, Wishlist as WishlistQl
 from datetime import datetime
 
@@ -33,10 +33,10 @@ class AddGroup(Mutation):
 
     @token_required
     def mutate(self, info, data, id_from_token):
-        a_level = AccessLevelEnum(data.access_level)
+        a_level = GroupAccessEnum(data.access_level)
         role = RoleEnum(data.admin_role)
         new_group_id = db.add(Group(title=data.title, about=data.about, access_level=a_level, date_creation=datetime.utcnow(),
-                     date=data.date))
+                     date=data.date), returning)
         db.add(GroupUser(group_id=new_group_id, user_id=id_from_token, role_in_group=role))
         db.commit()
         return AddGroup(ok=True, message="Group has been added!")
@@ -59,7 +59,7 @@ class EditGroup(Mutation):
         if data.about is not None and data.about != group.about:
             group.about = data.about
         if data.access_level is not None and data.access_level != group.access_level:
-            group.access_level = AccessLevelEnum(data.access_level)
+            group.access_level = GroupAccessEnum(data.access_level)
         db.commit()
         return EditGroup(ok=True, message="Item edited!")
 
