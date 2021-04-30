@@ -21,10 +21,10 @@ class AuthHandler:
         """check password by password_hash"""
         return self.pwd_context.verify(plain_password, hashed_password)
 
-    def encode_token(self, user_id):
+    def encode_token(self, user_id, experation=15):
         """creating token"""
         payload = {
-            'exp': datetime.utcnow() + timedelta(days=0, minutes=15),
+            'exp': datetime.utcnow() + timedelta(days=0, minutes=experation),
             'iat': datetime.utcnow(),
             'sub': user_id
         }
@@ -33,7 +33,15 @@ class AuthHandler:
             self.secret,
             algorithm='HS256')
 
-    def decode_token(self, token):
+    def decode_token_without_checking(self, token):
+        try:
+            payload = jwt.decode(token, self.secret, algorithms=['HS256'])
+            return payload['sub']
+        except jwt.InvalidTokenError:
+            # TODO делать возврат ошибки через JSONResponse ???
+            raise HTTPException(status_code=401, detail='Invalid token')
+
+    def decode_token_with_checking(self, token):
         try:
             payload = jwt.decode(token, self.secret, algorithms=['HS256'])
             return payload['sub']
@@ -55,17 +63,6 @@ class AuthHandler:
             self.secret,
             algorithm='HS256')
 
-    def refresh_token(self, refresh_token):
-        try:
-            payload = jwt.decode(refresh_token, self.secret, algorithms=['HS256'])
-            return self.encode_token(payload['sub']), self.revoke_token(payload['sub'])
-        except jwt.ExpiredSignatureError:
-            # TODO делать возврат ошибки через JSONResponse ???
-            raise HTTPException(status_code=401, detail='Signature has expired. Authorize again!')
-        except jwt.InvalidTokenError:
-            # TODO делать возврат ошибки через JSONResponse ???
-            raise HTTPException(status_code=401, detail='Invalid refresh_token')
-
 
 au = AuthHandler()
 
@@ -79,7 +76,7 @@ def token_required(func):
         if token is None:
             raise Exception("Token missed!")
         else:
-            id_from_token = au.decode_token(token)
+            id_from_token = au.decode_token_with_checking(token)
             return func(*args, **kwargs, id_from_token=id_from_token)
     return wrapper
 
@@ -91,7 +88,7 @@ def token_check(func):
         id_from_token = 0
         token = args[1].context['request'].headers.raw[5][1][4:].decode("utf-8")
         if token is not None:
-            id_from_token = au.decode_token(token)
+            id_from_token = au.decode_token_with_checking(token)
         return func(*args, **kwargs, id_from_token=id_from_token)
     return wrapper
 

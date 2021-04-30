@@ -90,11 +90,11 @@ class LoginUser(Mutation):
         user = db.query(User).filter_by(email=email).first()
         if au.verify_password(password, user.password_hash):
             token = au.encode_token(user.id)
-            # refresh_token = au.encode_token(user.id, True)
+            refresh_token = au.encode_token(user.id, experation=1440)  # 1440 min = 1 day
             user.token = token
-            # user.refresh_token = refresh_token
+            user.refresh_token = refresh_token
             db.commit()
-            return LoginUser(ok=True, message="Token issued", token=token)
+            return LoginUser(ok=True, message="Token issued", token=token, refresh_token=refresh_token)
         else:
             return LoginUser(ok=False, message="Invalid password or email")
 
@@ -136,26 +136,25 @@ class EditUser(Mutation):
 
 
 class RefreshToken(Mutation):
-    """Returning new access_token by refresh_token"""
+    """Returning new access_token and refresh_token"""
     class Arguments:
-        user_id = ID(required=True)
-        # TODO передавать его в Autorization ???
+        token = String(required=True)
         refresh_token = String(required=True)
 
     ok = Boolean()
     access_token = String()
+    refresh_token = String()
     message = String()
 
-    @token_check
-    def mutate(self, info, user_id, refresh_token, id_from_token):
-        if int(user_id) != id_from_token:
-            return RefreshToken(ok=False, message="Refresh token missed!", access_token="")
-        else:
-            new_access_token, revoked_refresh_token = au.refresh_token(refresh_token)
-            user = db.query(User).filter_by(id=id_from_token).first()
-            user.refresh_token = revoked_refresh_token
-            db.commit()
-            return RefreshToken(ok=True, message="New access_token generated!", access_token=new_access_token)
+    def mutate(self, info, token, refresh_token):
+        user = db.query(User).filter_by(token=token, refresh_token=refresh_token).first()
+        if user is None:
+            return RefreshToken(ok=False, message="ERROR!")
+        user.token = au.encode_token(user.id)
+        user.refresh_token = au.encode_token(user.id, experation=1440)
+        db.commit()
+        return RefreshToken(ok=False, message="ERROR!", token=user.token, refresh_token=user.refresh_token)
+
 
 
 class ChangePassword(Mutation):
@@ -311,7 +310,7 @@ class UserMutation(ObjectType):
     classic_register = ClassicRegisterUser.Field()
     # fast_register = FastRegisterUser.Field()
     authorization = LoginUser.Field()
-    refresh_access_token = RefreshToken.Field()
+    refresh_tokens = RefreshToken.Field()
     edit_user = EditUser.Field()
     change_password = ChangePassword.Field()
     reset_password = ResetPassword.Field()
