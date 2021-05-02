@@ -30,16 +30,20 @@ class AddGroup(Mutation):
 
     ok = Boolean()
     message = String()
+    ID = ID()
 
     @token_required
     def mutate(self, info, data, id_from_token):
         a_level = GroupAccessEnum(data.access_level)
         role = RoleEnum(data.admin_role)
-        new_group_id = db.add(Group(title=data.title, about=data.about, access_level=a_level, date_creation=datetime.utcnow(),
-                     date=data.date), returning)
-        db.add(GroupUser(group_id=new_group_id, user_id=id_from_token, role_in_group=role))
+        new_group = Group(title=data.title, about=data.about, access_level=a_level, date_creation=datetime.utcnow(),
+                     date=data.date)
+        db.add(new_group)
         db.commit()
-        return AddGroup(ok=True, message="Group has been added!")
+        db.refresh(new_group)
+        db.add(GroupUser(group_id=new_group.id, user_id=id_from_token, role_in_group=role))
+        db.commit()
+        return AddGroup(ok=True, message="Group has been added!", ID=new_group.id)
 
 
 class EditGroup(Mutation):

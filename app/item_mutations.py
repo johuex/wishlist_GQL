@@ -34,6 +34,7 @@ class AddItem(Mutation):
 
     ok = Boolean()
     message = String()
+    ID = ID()
 
     @token_required
     @last_seen_set
@@ -42,11 +43,13 @@ class AddItem(Mutation):
         a_level = AccessLevelEnum(data.access_level)
         if data.degree is not None:
             degree = DegreeEnum(data.degree)
-        db.add(Item(title=data.title, owner_id=id_from_token, about=data.about, access_level=a_level,
+        new_item = Item(title=data.title, owner_id=id_from_token, about=data.about, access_level=a_level,
                     list_id=data.list_id, degree=degree, status='FREE', date_for_status=datetime.utcnow(),
-                    date_creation=datetime.utcnow()))
+                    date_creation=datetime.utcnow())
+        db.add(new_item)
         db.commit()
-        return AddItem(ok=True, message="Item added!")
+        db.refresh(new_item)
+        return AddItem(ok=True, message="Item added!", ID=new_item.id)
 
 
 class EditItem(Mutation):

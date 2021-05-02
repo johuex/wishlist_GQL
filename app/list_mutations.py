@@ -27,14 +27,17 @@ class AddList(Mutation):
 
     ok = Boolean()
     message = String()
+    ID = ID()
 
     @token_required
     @last_seen_set
     def mutate(root, info, data, id_from_token):
         a_level = AccessLevelEnum(data.access_level)
-        db.add(Wishlist(title=data.title, user_id=id_from_token, about=data.about, access_level=a_level))
+        new_list = Wishlist(title=data.title, user_id=id_from_token, about=data.about, access_level=a_level)
+        db.add(new_list)
         db.commit()
-        return AddList(ok=True, message="Wishlist added!")
+        db.refresh(new_list)
+        return AddList(ok=True, message="Wishlist added!", ID=new_list.id)
 
 
 class EditList(Mutation):
@@ -72,7 +75,7 @@ class DeleteWishList(Mutation):
         list_id = ID()
         with_items = Boolean()
 
-    ok = ID()
+    ok = Boolean()
     message = String()
 
     @token_check

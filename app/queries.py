@@ -1,7 +1,7 @@
 from graphene import ObjectType, relay, Field, ID, String
 from app.schema import User as UserQl, Wishlist as WishlistQl, Item as ItemQl, Group as GroupQl
 from app.models import User as UserDB, Wishlist as WishlistDB, Item as ItemDB, Group as GroupDB,\
-    FriendShip as FSDB, AccessLevelEnum
+    FriendShip as FSDB, AccessLevelEnum, GroupAccessEnum, GroupUser as GroupUserDB
 from app.database import db_session as db
 from app.auth import token_check, last_seen_set
 
@@ -48,4 +48,10 @@ class Query(ObjectType):
     @token_check
     @last_seen_set
     async def resolve_group(parent, info, group_id, id_from_token):
-        pass
+        group = db.query(GroupDB).filter_by(id=group_id).first()
+        if group.access_level == GroupAccessEnum.OPEN:
+            return group
+        user_group = db.query(GroupUserDB).filter_by(user_id=id_from_token, group_id=group_id).first()
+        if group.access_level == GroupAccessEnum.CLOSE and user_group is not None:
+            return group
+        raise Exception("Access denied!")

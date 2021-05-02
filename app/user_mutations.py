@@ -30,7 +30,6 @@ class UserEditInput(InputObjectType):
     phone_number = String()
     user_name = String()
     surname = String()
-    #userpic = ???
     about = String()
     birthday = Date()
     nickname = String()
@@ -44,17 +43,19 @@ class ClassicRegisterUser(Mutation):
 
     ok = Boolean()
     message = String()
+    ID = ID()
 
     def mutate(root, info, user_data):
         if db.query(User).filter_by(email=user_data.email).first():
             return ClassicRegisterUser(ok=False, message="An account is already registered for this mailbox")
         if db.query(User).filter_by(nickname=user_data.nickname).first():
             return ClassicRegisterUser(ok=False, message="An account is already registered for this nickname")
-
-        db.add(User(email=user_data.email, password_hash=au.get_password_hash(user_data.password),
-                         user_name=user_data.user_name, nickname=user_data.nickname))
+        new_user = User(email=user_data.email, password_hash=au.get_password_hash(user_data.password),
+                         user_name=user_data.user_name, nickname=user_data.nickname)
+        db.add(new_user)
         db.commit()
-        return ClassicRegisterUser(ok=True, message="Registration done!")
+        db.refresh(new_user)
+        return ClassicRegisterUser(ok=True, message="Registration done!", ID=new_user.id)
 
 
 class FastRegisterUser(Mutation):
@@ -64,15 +65,18 @@ class FastRegisterUser(Mutation):
 
     ok = Boolean()
     message = String()
+    ID = ID()
 
     def mutate(root, info, user_data):
         if db.query(User).filter_by(email=user_data.email).first():
             return ClassicRegisterUser(ok=False, message="An account is already registered for this mailbox")
         code = random.randint(100000, 999999)
         e_host.send_email(user_data.email, "Reset Password", user_data.user_name, "other/fast_registration.txt", code)
-        db.add(User(email=user_data.email, user_name=user_data.user_name, password_hash=au.get_password_hash(code)))
+        new_user = User(email=user_data.email, user_name=user_data.user_name, password_hash=au.get_password_hash(code))
+        db.add(new_user)
         db.commit()
-        return ClassicRegisterUser(ok=True, message="Registration done!")
+        db.refresh(new_user)
+        return ClassicRegisterUser(ok=True, message="Registration done!", ID=new_user.id)
 
 
 class LoginUser(Mutation):
@@ -147,14 +151,13 @@ class RefreshToken(Mutation):
     message = String()
 
     def mutate(self, info, token, refresh_token):
-        user = db.query(User).filter_by(token=token, refresh_token=refresh_token).first()
+        user = db.query(User).filter(token==token and refresh_token==refresh_token).first()
         if user is None:
             return RefreshToken(ok=False, message="ERROR!")
         user.token = au.encode_token(user.id)
         user.refresh_token = au.encode_token(user.id, experation=1440)
         db.commit()
-        return RefreshToken(ok=False, message="ERROR!", token=user.token, refresh_token=user.refresh_token)
-
+        return RefreshToken(ok=False, message="ERROR!", access_token=user.token, refresh_token=user.refresh_token)
 
 
 class ChangePassword(Mutation):

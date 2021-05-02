@@ -51,7 +51,7 @@ class Item(SQLAlchemyObjectType):
                 responce.append(download_file(Config.bucket, pic.path_to_picture))
             return responce
 
-        raise Exception("Access denied!")
+        return []
 
     @token_check
     def resolve_in_wishlist(parent, info, id_from_token):
@@ -85,7 +85,7 @@ class Wishlist(SQLAlchemyObjectType):
         if parent.access_level == AccessLevelEnum.FRIENDS and db.query(FriendShipModel).filter_by(user_id_1=parent.user_id,
                                                                              user_id_2=id_from_token).first():
             return db.query(ItemModel).filter_by(list_id=parent.id, access_level=AccessLevelEnum.FRIENDS).all()
-        raise Exception("Access denied!")
+        return []
 
     @token_check
     def resolve_in_groups(parent, info, id_from_token):
@@ -100,33 +100,33 @@ class Group(SQLAlchemyObjectType):
 
     @token_check
     def resolve_users(parent, info, id_from_token):
-        results = db.query(UserModel).join(GroupUserModel).filter(GroupUserModel.group_id == parent.id).all()
+        results = db.query(GroupUserModel).filter_by(group_id=parent.id).all()
         if parent.access_level == GroupAccessEnum.OPEN:
             return results
-        user = db.query(GroupUserModel).filter_by(user_id=id_from_token).first()
-        if parent.access_level == GroupAccessEnum.CLOSE and user is not None and user.group_id == parent.id:
+        user = db.query(GroupUserModel).filter_by(user_id=id_from_token, group_id=parent.id).first()
+        if parent.access_level == GroupAccessEnum.CLOSE and user is not None:
             return results
-        raise Exception("Access denied!")
+        return []
 
     @token_check
     def resolve_items(parent, info, id_from_token):
-        results = db.query(ItemModel).join(ItemGroupModel).filter(ItemGroupModel.group_id==parent.id).all()
+        results = db.query(ItemGroupModel).filter_by(group_id=parent.id).all()
         if parent.access_level == GroupAccessEnum.OPEN:
             return results
-        user = db.query(GroupUserModel).filter_by(user_id=id_from_token).first()
-        if parent.access_level == GroupAccessEnum.CLOSE and user is not None and user.group_id == parent.id:
+        user = db.query(GroupUserModel).filter_by(user_id=id_from_token, group_id=parent.id).first()
+        if parent.access_level == GroupAccessEnum.CLOSE and user is not None:
             return results
-        raise Exception("Access denied!")
+        return []
 
     @token_check
     def resolve_lists(parent, info, id_from_token):
-        results = db.query(WishlistModel).join(GroupListModel).filter(GroupListModel.group_id == parent.id).all()
+        results = db.query(GroupListModel).filter_by(group_id=parent.id).all()
         if parent.access_level == GroupAccessEnum.OPEN:
             return results
-        user = db.query(GroupUserModel).filter_by(user_id=id_from_token).first()
-        if parent.access_level == GroupAccessEnum.CLOSE and user is not None and user.group_id == parent.id:
+        user = db.query(GroupUserModel).filter_by(user_id=id_from_token, group_id=parent.id).first()
+        if parent.access_level == GroupAccessEnum.CLOSE and user is not None:
             return results
-        raise Exception("Access denied!")
+        return []
 
 
 class User(SQLAlchemyObjectType):
@@ -153,7 +153,7 @@ class User(SQLAlchemyObjectType):
                 response.append(wlist)
         if len(response) > 0:
             return response
-        raise Exception("Access denied!")
+        return []
 
     @token_check
     def resolve_friend_requests(parent, info, id_from_token):
@@ -183,7 +183,7 @@ class User(SQLAlchemyObjectType):
                 response.append(item)
         if len(response) > 0:
             return response
-        raise Exception("Access denied!")
+        return []
 
     @token_check
     def resolve_items_giver(parent, info, id_from_token):
@@ -192,7 +192,7 @@ class User(SQLAlchemyObjectType):
             return item
         if item.giver_id == id_from_token:
             return item
-        raise Exception("Access denied!")
+        return []
 
     def resolve_userpic(parent, info):
         """return url to download picture"""
