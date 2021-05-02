@@ -227,7 +227,7 @@ class GroupUser(SQLAlchemyObjectType):
 
     @token_check
     def resolve_users(parent, info, id_from_token):
-        return db.query(UserModel).filter_by(id=parent.user_id).all()
+        return db.query(UserModel).filter_by(id=parent.user_id).first()
 
     @token_check
     def resolve_group(parent, info, id_from_token):
@@ -246,7 +246,7 @@ class GroupList(SQLAlchemyObjectType):
 
     @token_check
     def resolve_lists(parent, info, id_from_token):
-        return db.query(WishlistModel).filter_by(id=parent.wishlist_id).all()
+        return db.query(WishlistModel).filter_by(id=parent.wishlist_id).first()
 
     @token_check
     def resolve_group(parent, info, id_from_token):
@@ -266,7 +266,7 @@ class ItemGroup(SQLAlchemyObjectType):
 
     @token_check
     def resolve_item(parent, info, id_from_token):
-        return db.query(ItemModel).filter_by(id=parent.item_id).all()
+        return db.query(ItemModel).filter_by(id=parent.item_id).first()
 
     @token_check
     def resolve_group(parent, info, id_from_token):

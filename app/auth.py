@@ -38,19 +38,19 @@ class AuthHandler:
             payload = jwt.decode(token, self.secret, algorithms=['HS256'])
             return payload['sub']
         except jwt.InvalidTokenError:
-            # TODO делать возврат ошибки через JSONResponse ???
-            raise HTTPException(status_code=401, detail='Invalid token')
+            raise Exception('Invalid token!')
+            #raise HTTPException(status_code=401, detail='Invalid token')
 
     def decode_token_with_checking(self, token):
         try:
             payload = jwt.decode(token, self.secret, algorithms=['HS256'])
             return payload['sub']
         except jwt.ExpiredSignatureError:
-            # TODO делать возврат ошибки через JSONResponse ???
-            raise HTTPException(status_code=401, detail='Signature has expired. Authorize again or refresh access_token!')
+            raise Exception('Signature has expired. Authorize again or refresh access_token!')
+            #raise HTTPException(status_code=401, detail='Signature has expired. Authorize again or refresh access_token!')
         except jwt.InvalidTokenError:
-            # TODO делать возврат ошибки через JSONResponse ???
-            raise HTTPException(status_code=401, detail='Invalid token')
+            raise Exception('Invalid token')
+            #raise HTTPException(status_code=401, detail='Invalid token')
 
     def revoke_token(self, user_id):
         payload = {

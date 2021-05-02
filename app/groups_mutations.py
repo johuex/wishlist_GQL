@@ -37,7 +37,7 @@ class AddGroup(Mutation):
         a_level = GroupAccessEnum(data.access_level)
         role = RoleEnum(data.admin_role)
         new_group = Group(title=data.title, about=data.about, access_level=a_level, date_creation=datetime.utcnow(),
-                     date=data.date)
+                     date=data.date, admin_id=id_from_token)
         db.add(new_group)
         db.commit()
         db.refresh(new_group)
@@ -98,20 +98,24 @@ class AddItems(Mutation):
         group = db.query(Group).filter_by(id=group_id).first()
         admin_role = db.query(GroupUser.role_in_group).filter_by(user_id=group.admin_id, group_id=group_id).first()
         user_role = db.query(GroupUser.role_in_group).filter_by(user_id=id_from_token, group_id=group_id).first()
-        if admin_role == RoleEnum.FRIENDS:
-            if user_role is not None and user_role == RoleEnum.FRIENDS:
+        if admin_role.role_in_group == RoleEnum.FRIENDS:
+            if user_role.role_in_group is not None and user_role.role_in_group == RoleEnum.FRIENDS:
                 for item_id in items_id:
-                    db.add(ItemGroup(group_id=group_id, item_id=item_id))
-                db.commit()
+                    i = db.query(Item).filter_by(id=item_id).first()
+                    if i.owner_id == id_from_token:
+                        db.add(ItemGroup(group_id=group_id, item_id=item_id))
+                    db.commit()
                 return AddItems(ok=True, message="Items have been added!")
-        if admin_role == RoleEnum.ORGANIZER:
-            if user_role is not None and user_role == RoleEnum.ORGANIZER:
+        if admin_role.role_in_group == RoleEnum.ORGANIZER:
+            if user_role.role_in_group is not None and user_role.role_in_group == RoleEnum.ORGANIZER:
                 for item_id in items_id:
-                    db.add(ItemGroup(group_id=group_id, item_id=item_id))
+                    i = db.query(Item).filter_by(id=item_id).first()
+                    if i.owner_id == id_from_token:
+                        db.add(ItemGroup(group_id=group_id, item_id=item_id))
                 db.commit()
                 return AddItems(ok=True, message="Items have been added!")
 
-        return AddItems(ok=True, message="Access denied!")
+        return AddItems(ok=False, message="Access denied!")
 
 
 class AddLists(Mutation):
@@ -130,13 +134,17 @@ class AddLists(Mutation):
         if admin_role == RoleEnum.FRIENDS:
             if user_role is not None and user_role == RoleEnum.FRIENDS:
                 for list_id in lists_id:
-                    db.add(GroupList(group_id=group_id, wishlist_id=list_id))
+                    i = db.query(Wishlist).filter_by(id=list_id).first()
+                    if i.user_id == id_from_token:
+                        db.add(GroupList(group_id=group_id, wishlist_id=list_id))
                 db.commit()
                 return AddLists(ok=True, message="WishLists have been added!")
         if admin_role == RoleEnum.ORGANIZER:
             if user_role is not None and user_role == RoleEnum.ORGANIZER:
                 for list_id in lists_id:
-                    db.add(GroupList(group_id=group_id, wishlist_id=list_id))
+                    i = db.query(Item).filter_by(id=list_id).first()
+                    if i.user_id == id_from_token:
+                        db.add(GroupList(group_id=group_id, wishlist_id=list_id))
                 db.commit()
                 return AddLists(ok=True, message="WishLists have been added!")
 
