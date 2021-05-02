@@ -107,3 +107,19 @@ query{
     }
   }
 }
+
+query{
+  group(groupId: "2"){
+    title
+    items{
+      edges{
+        node{
+          item{
+            title
+            status
+          }
+        }
+      }
+    }
+  }
+}
