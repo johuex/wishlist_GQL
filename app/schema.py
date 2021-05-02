@@ -166,7 +166,6 @@ class User(SQLAlchemyObjectType):
         temp = db.query(FriendShipModel).filter_by(user_id_1=parent.id).all()
         return temp.user_id_2
 
-
     @token_check
     def resolve_items_owner(parent, info, id_from_token):
         response = list()

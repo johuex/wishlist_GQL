@@ -50,7 +50,7 @@ class ClassicRegisterUser(Mutation):
         if db.query(User).filter_by(nickname=user_data.nickname).first():
             return ClassicRegisterUser(ok=False, message="An account is already registered for this nickname")
         new_user = User(email=user_data.email, password_hash=au.get_password_hash(user_data.password),
-                         user_name=user_data.user_name, nickname=user_data.nickname)
+                         user_name=user_data.user_name, nickname=user_data.nickname, userpic="users/user_0.png")
         db.add(new_user)
         db.commit()
         db.refresh(new_user)

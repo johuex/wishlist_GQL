@@ -49,6 +49,7 @@ class AddItem(Mutation):
         db.add(new_item)
         db.commit()
         db.refresh(new_item)
+        db.add(ItemPicture(item_id=new_item.id, path_to_picture='items/item_0.png'))
         return AddItem(ok=True, message="Item added!", ID=new_item.id)
 
 
