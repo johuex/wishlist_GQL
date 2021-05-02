@@ -40,4 +40,4 @@ class EmailHost:
         del msg
 
 
-# e_host = EmailHost()
+e_host = EmailHost()

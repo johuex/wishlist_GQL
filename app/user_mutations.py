@@ -7,8 +7,7 @@ from app.database import db_session as db
 from app.auth import au, token_required, last_seen_set, token_check
 from app.config import Config
 from app.s3 import *
-#from app.email_server import e_host
-e_host=0
+from app.email_server import e_host
 
 
 class UserInputRegistration(InputObjectType):
@@ -171,7 +170,7 @@ class ChangePassword(Mutation):
     @token_check
     def mutate(self, info, old_password, new_password, id_from_token):
         user = db.query(User).filter_by(id=id_from_token).first()
-        if old_password != au.verify_password(user.password_hash):
+        if au.verify_password(old_password, user.password_hash) is False:
             return ChangePassword(ok=False, message="Old password is incorrect!")
         user.password_hash = au.get_password_hash(new_password)
         return ChangePassword(ok=True, message="Password was changed!")
@@ -301,10 +300,10 @@ class ResetPassword(Mutation):
 
     @token_check
     def mutate(self, info, id_from_token):
-        user = db.query(User).filter_by().first()
+        user = db.query(User).filter_by(id=id_from_token).first()
         code = random.randint(100000, 999999)
         e_host.send_email(user.email, "Reset Password", user.user_name, "other/reset_password.txt", code)
-        user.password_hash = au.get_password_hash(code)
+        user.password_hash = au.get_password_hash(str(code))
         db.commit()
         return ResetPassword(ok=True, message="Confirm email send to your email!")
 
