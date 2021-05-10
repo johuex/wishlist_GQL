@@ -74,7 +74,6 @@ class User(Base):
     token = Column(Text())
     refresh_token = Column(Text())
     user_lists = relationship("Wishlist", cascade="all,delete", foreign_keys="Wishlist.user_id")
-    # TODO написать им резольверы
     friend_requests = relationship("FriendRequests", cascade="all,delete", foreign_keys="FriendRequests.user_id_from")
     friends = relationship("FriendShip", cascade="all,delete", foreign_keys="FriendShip.user_id_1")
     items_owner = relationship("Item", cascade="all,delete", foreign_keys="Item.owner_id")

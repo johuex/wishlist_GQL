@@ -71,7 +71,6 @@ def token_required(func):
     """Returning User_ID from token, where token is required"""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        # TODO check path to header Authorization
         token = args[1].context['request'].headers.raw[5][1][4:].decode("utf-8")
         if token is None:
             raise Exception("Token missed!")
