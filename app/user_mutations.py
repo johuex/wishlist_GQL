@@ -70,7 +70,7 @@ class FastRegisterUser(Mutation):
         if db.query(User).filter_by(email=user_data.email).first():
             return ClassicRegisterUser(ok=False, message="An account is already registered for this mailbox")
         code = random.randint(100000, 999999)
-        e_host.send_email(user_data.email, "Reset Password", user_data.user_name, "other/fast_registration.txt", code)
+        e_host.send_email(user_data.email, "Confirm actions", user_data.user_name, "other/fast_registration.txt", code)
         new_user = User(email=user_data.email, user_name=user_data.user_name, password_hash=au.get_password_hash(code))
         db.add(new_user)
         db.commit()
@@ -161,6 +161,7 @@ class RefreshToken(Mutation):
 
 class ChangePassword(Mutation):
     class Arguments:
+        email = String()
         old_password = String(required=True)
         new_password = String(required=True)
 
@@ -168,8 +169,10 @@ class ChangePassword(Mutation):
     message = String()
 
     @token_check
-    def mutate(self, info, old_password, new_password, id_from_token):
-        user = db.query(User).filter_by(id=id_from_token).first()
+    def mutate(self, info, old_password, new_password, email):
+        user = db.query(User).filter_by(email=email).first()
+        if user is None:
+            return ChangePassword(ok=False, message="User with this email is None!")
         if au.verify_password(old_password, user.password_hash) is False:
             return ChangePassword(ok=False, message="Old password is incorrect!")
         user.password_hash = au.get_password_hash(new_password)
@@ -295,12 +298,16 @@ class UploadUserPicture(Mutation):
 
 
 class ResetPassword(Mutation):
+    class Arguments:
+        email = String(required=True)
+
     ok = Boolean()
     message = String()
 
-    @token_check
-    def mutate(self, info, id_from_token):
-        user = db.query(User).filter_by(id=id_from_token).first()
+    def mutate(self, info, email):
+        user = db.query(User).filter_by(email=email).first()
+        if user is None:
+            raise Exception("No user with this email!")
         code = random.randint(100000, 999999)
         e_host.send_email(user.email, "Reset Password", user.user_name, "other/reset_password.txt", code)
         user.password_hash = au.get_password_hash(str(code))
