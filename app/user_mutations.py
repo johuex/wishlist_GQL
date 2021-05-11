@@ -161,14 +161,13 @@ class RefreshToken(Mutation):
 
 class ChangePassword(Mutation):
     class Arguments:
-        email = String()
+        email = String(required=True)
         old_password = String(required=True)
         new_password = String(required=True)
 
     ok = String()
     message = String()
 
-    @token_check
     def mutate(self, info, old_password, new_password, email):
         user = db.query(User).filter_by(email=email).first()
         if user is None:
