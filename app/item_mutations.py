@@ -83,19 +83,19 @@ class EditItem(Mutation):
 class DeleteItem(Mutation):
     class Arguments:
         item_id = ID()
-        owner_id = ID()
 
     ok = ID()
     message = String()
 
     @token_check
     def mutate(self, info, item_id, owner_id, id_from_token):
-        if int(owner_id) != id_from_token:
-            return DeleteItem(ok=False, message="Access denied!")
         item = db.query(Item).filter_by(id=item_id).first()
+        if item.owner_id != id_from_token:
+            return DeleteItem(ok=False, message="Access denied!")
         # TODO если не работают Cascade, то нужно удалять в остальных таблицах вручную
         db.delete(item)
         db.commit()
+        return DeleteItem(ok=True, message="Item deleted!")
 
 
 class AddPictures(Mutation):

@@ -1,8 +1,11 @@
 import graphene
-from fastapi import FastAPI, APIRouter, Request
+#from fastapi import FastAPI, APIRouter, Request
 
 from graphql.execution.executors.asyncio import AsyncioExecutor
+from starlette.applications import Starlette
 from starlette.graphql import GraphQLApp
+from starlette.routing import Route
+
 from app.queries import Query
 from app.mutations import Mutation
 from .database import SessionLocal, engine
@@ -11,6 +14,17 @@ from .auth import AuthHandler
 
 
 def create_app():
+    routes = [
+        Route('/', GraphQLApp(schema=graphene.Schema(
+                              query=Query,
+                              mutation=Mutation),
+                              executor_class=AsyncioExecutor,
+                              graphiql=True,))
+    ]
+
+    app = Starlette(routes=routes)
+    return app
+'''
     router = APIRouter()
     app = FastAPI()
     gql_app = GraphQLApp(
@@ -28,6 +42,6 @@ def create_app():
 
     app.include_router(router)
 
-    return app
+    return app'''
 
 

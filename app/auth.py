@@ -71,7 +71,7 @@ def token_required(func):
     """Returning User_ID from token, where token is required"""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        token = args[1].context['request'].headers.raw[5][1][4:].decode("utf-8")
+        token = args[1].context['request'].headers.raw[6][1][4:].decode("utf-8")
         if token is None:
             raise Exception("Token missed!")
         else:
@@ -85,7 +85,7 @@ def token_check(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         id_from_token = 0
-        token = args[1].context['request'].headers.raw[5][1][4:].decode("utf-8")
+        token = args[1].context['request'].headers.raw[6][1][4:].decode("utf-8")
         if token is not None:
             id_from_token = au.decode_token_with_checking(token)
         return func(*args, **kwargs, id_from_token=id_from_token)
