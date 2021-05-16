@@ -308,7 +308,7 @@ class ResetPassword(Mutation):
         if user is None:
             raise Exception("No user with this email!")
         code = random.randint(100000, 999999)
-        e_host.send_email(user.email, "Reset Password", user.user_name, "other/reset_password.txt", code)
+        e_host.send_email(user.email, "Confirm actions", user.user_name, "other/reset_password.txt", code)
         user.password_hash = au.get_password_hash(str(code))
         db.commit()
         return ResetPassword(ok=True, message="Confirm email send to your email!")
