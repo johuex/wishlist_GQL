@@ -14,16 +14,16 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
+          architecture: x64
       # Step 3
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Install Python Virtual ENV
+        run: pip install virtualenv
       # Step 4
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id:${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key:${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-central-1
+      - name: Activate VENV and install dependencies
+        run:  virtualenv -p python3.7 venv
+          source ./venv/bin/activate
+          pip install -r requirements.txt
+
 
 
   continuous-deployment:
@@ -32,13 +32,16 @@ jobs:
     if: github.ref == 'refs/heads/master'
     steps:
      # Step 1
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: Install AWS CLI
+        uses: unfor19/install-aws-cli-action@v1
         with:
-          aws-access-key-id:${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key:${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-southeast-1
-     # Step 2
+          version: 1
+        env:
+          AWS_SECRET_ACCESS_KEY_ID: ${{secrets.AWS_SECRET_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
+
+      # Step 2
       - name: Create CodeDeploy Deployment
         id: deploy
         run: |
