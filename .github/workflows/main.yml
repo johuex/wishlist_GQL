@@ -20,7 +20,8 @@ jobs:
         run: pip install virtualenv
       # Step 4
       - name: Activate VENV and install dependencies
-        run:  virtualenv -p python3.9 venv
+        run:  |
+          virtualenv -p python3.7 venv
           source ./venv/bin/activate
           pip install -r requirements.txt
 
