@@ -21,8 +21,9 @@ jobs:
       # Step 4
       - name: Activate VENV and install dependencies
         run:  |
-          virtualenv -p python3.9 ./wishlist_GQL/venv
-          source /home/ubuntu/wishlist_GQL/venv/bin/activate
+          cd ./wishlist_GQL
+          virtualenv -p python3.9 venv
+          source ./venv/bin/activate
           pip install -r requirements.txt
 
 
@@ -61,5 +62,5 @@ jobs:
       # Step 3
       - name: Run UVICORN
         run: |
-          source /home/ubuntu/wishlist_GQL/venv/bin/activate
+          source ./venv/bin/activate
           uvicorn main:app --host 0.0.0.0 --port 8000
