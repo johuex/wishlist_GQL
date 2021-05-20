@@ -36,19 +36,21 @@ jobs:
       - name: Install AWS CLI
         uses: unfor19/install-aws-cli-action@v1
         with:
-          version: 1
+          version: 2
+        run: |
+          aws configure set aws_access_key_id ${{secrets.AWS_SECRET_ACCESS_KEY_ID}}
+          aws configure set aws_secret_access_key ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          aws configure set region ${{secrets.AWS_DEFAULT_REGION}}
         env:
           AWS_SECRET_ACCESS_KEY_ID: ${{secrets.AWS_SECRET_ACCESS_KEY_ID}}
           AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
           AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
 
+
       # Step 2
       - name: Create CodeDeploy Deployment
         id: deploy
         run: |
-          aws configure set aws_access_key_id ${{secrets.AWS_SECRET_ACCESS_KEY_ID}}
-          aws configure set aws_secret_access_key ${{secrets.AWS_SECRET_ACCESS_KEY}}
-          aws configure set region ${{secrets.AWS_DEFAULT_REGION}}
           aws deploy create-deployment \
             --application-name application-name \
             --deployment-group-name AppDeploymentGroupName \
