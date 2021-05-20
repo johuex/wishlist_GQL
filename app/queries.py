@@ -1,4 +1,4 @@
-from graphene import ObjectType, relay, Field, ID, List
+from graphene import ObjectType, relay, Field, ID, List, String
 from app.schema import User as UserQl, Wishlist as WishlistQl, Item as ItemQl, Group as GroupQl, Search as SearchQL, \
     UsersWishlistsAndItems as WaIQL
 from app.models import User as UserDB, Wishlist as WishlistDB, Item as ItemDB, Group as GroupDB,\
@@ -19,7 +19,7 @@ class Query(ObjectType):
     group = Field(GroupQl, group_id=ID(required=True), description="Return group by ID")
     news = Field(lambda: List(WaIQL), description="News from friends of user")
     index = Field(lambda: List(WaIQL), description="All open items and wishlists of all users on this service")
-    search = Field(lambda: List(SearchQL), description="Search in users, items, wishlists, groups")
+    search = Field(lambda: List(SearchQL), search_text=String(required=True), description="Search in users, items, wishlists, groups")
 
     @token_check
     @last_seen_set
@@ -99,6 +99,28 @@ class Query(ObjectType):
 
     @token_check
     @last_seen_set
-    def resolve_search(parent, info, id_from_token):
+    def resolve_search(parent, info, search_text, id_from_token):
+        string_list = search_text.split(" ")
+        items = list()
+        wishlists = list()
+        users = list()
+        for i in string_list:
+            temp = db.query(UserDB).filter_by(nickname=i).first()
+            if temp is not None:
+                users.append(temp)
+            temp = db.query(UserDB).filter_by(user_name=i).first()
+            if temp is not None:
+                users.append(temp)
+            temp = db.query(UserDB).filter_by(surname=i).first()
+            if temp is not None:
+                users.append(temp)
 
-        return items + wishlists + user
+            temp = db.query(WishlistDB).filter_by(title=i, access_level='ALL').all()
+            if len(temp) != 0:
+                for j in temp:
+                    items.append(j)
+            temp = db.query(ItemDB).filter_by(title=i, access_level='ALL').all()
+            if len(temp) != 0:
+                for j in temp:
+                    items.append(j)
+        return items + wishlists + users
