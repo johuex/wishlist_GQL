@@ -60,4 +60,6 @@ jobs:
           AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
       # Step 3
       - name: Run UVICORN
-        run: uvicorn main:app --host 0.0.0.0 --port 8000
+        run: |
+        source ./venv/bin/activate
+        uvicorn main:app --host 0.0.0.0 --port 8000
