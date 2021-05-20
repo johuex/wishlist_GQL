@@ -1,19 +1,30 @@
-from graphene import ObjectType, relay, Field, ID, String
-from app.schema import User as UserQl, Wishlist as WishlistQl, Item as ItemQl, Group as GroupQl
+from graphene import ObjectType, relay, Field, ID, List
+from app.schema import User as UserQl, Wishlist as WishlistQl, Item as ItemQl, Group as GroupQl, Search as SearchQL, \
+    UsersWishlistsAndItems as WaIQL
 from app.models import User as UserDB, Wishlist as WishlistDB, Item as ItemDB, Group as GroupDB,\
     FriendShip as FSDB, AccessLevelEnum, GroupAccessEnum, GroupUser as GroupUserDB
 from app.database import db_session as db
 from app.auth import token_check, last_seen_set
+from sqlalchemy import and_, or_
 
 
 class Query(ObjectType):
     class Meta:
         exclude_fields = ('users', 'wishlists', 'items', 'groups')
     node = relay.Node.Field()
+    me = Field(UserQl, description="Return yourself by ID from token")
     user = Field(UserQl, user_id=ID(required=True), description="Return user by ID")
     wishlist = Field(WishlistQl, list_id=ID(required=True), description="Return wishlist by ID")
     item = Field(ItemQl, item_id=ID(required=True), description="Return item by ID")
     group = Field(GroupQl, group_id=ID(required=True), description="Return group by ID")
+    news = Field(lambda: List(WaIQL), description="News from friends of user")
+    index = Field(lambda: List(WaIQL), description="All open items and wishlists of all users on this service")
+    search = Field(lambda: List(SearchQL), description="Search in users, items, wishlists, groups")
+
+    @token_check
+    @last_seen_set
+    async def resolve_me(parent, info, id_from_token):
+        return db.query(UserDB).filter_by(id=int(id_from_token)).first()
 
     @last_seen_set
     async def resolve_user(parent, info, user_id):
@@ -55,3 +66,39 @@ class Query(ObjectType):
         if group.access_level == GroupAccessEnum.CLOSE and user_group is not None:
             return group
         raise Exception("Access denied!")
+
+    @token_check
+    @last_seen_set
+    def resolve_news(parent, info, id_from_token):
+        wishlists = db.query(WishlistDB)\
+            .join(WishlistDB.user_owner)\
+            .join(UserDB.friends)\
+            .filter(and_(UserDB.id == id_from_token, or_((WishlistDB.access_level == 'ALL'), (WishlistDB.access_level == 'FRIENDS'))))\
+            .all()
+        items = db.query(ItemDB)\
+            .join(ItemDB.owner)\
+            .join(UserDB.friends) \
+            .filter(and_(UserDB.id == id_from_token,
+                         or_((ItemDB.access_level == 'ALL'), (ItemDB.access_level == 'FRIENDS'))))\
+            .all()
+        return items + wishlists
+
+    @last_seen_set
+    def resolve_index(parent, info):
+        wishlists = db.query(WishlistDB) \
+            .join(WishlistDB.user_owner) \
+            .join(UserDB.friends) \
+            .filter(WishlistDB.access_level == 'ALL') \
+            .all()
+        items = db.query(ItemDB) \
+            .join(ItemDB.owner) \
+            .join(UserDB.friends) \
+            .filter(ItemDB.access_level == 'ALL') \
+            .all()
+        return items + wishlists
+
+    @token_check
+    @last_seen_set
+    def resolve_search(parent, info, id_from_token):
+
+        return items + wishlists + user

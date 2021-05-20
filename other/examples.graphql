@@ -123,3 +123,16 @@ query{
     }
   }
 }
+
+query{
+  news{
+    ...on Wishlist{
+      id
+      title
+    }
+    ...on Item{
+      id
+      title
+    }
+  }
+}

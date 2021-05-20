@@ -4,7 +4,7 @@ from app.models import User as UserModel, FriendRequests as FriendRequestsModel,
     Item as ItemModel, Group as GroupModel, Wishlist as WishlistModel,\
     ItemPicture as ItemPictureModel, GroupUser as GroupUserModel, GroupList as GroupListModel, \
     ItemGroup as ItemGroupModel, AccessLevelEnum, GroupAccessEnum
-from app.auth import token_check
+from app.auth import token_check, last_seen_set
 from app.database import db_session as db
 from graphene_sqlalchemy import SQLAlchemyObjectType
 from app.s3 import *
@@ -16,6 +16,7 @@ class FriendRequests(SQLAlchemyObjectType):
         description = "Table of requests for friendship"
         model = FriendRequestsModel
         interfaces = (relay.Node,)
+        exclude_fields = ('user_id_from', 'user_id_to',)
 
 
 class FriendShip(SQLAlchemyObjectType):
@@ -23,6 +24,7 @@ class FriendShip(SQLAlchemyObjectType):
         description = "Table for friendship"
         model = FriendShipModel
         interfaces = (relay.Node,)
+        exclude_fields = ('user_id_1', 'user_id_2',)
 
 
 class Item(SQLAlchemyObjectType):
@@ -163,8 +165,7 @@ class User(SQLAlchemyObjectType):
 
     @token_check
     def resolve_friends(parent, info, id_from_token):
-        temp = db.query(FriendShipModel).filter_by(user_id_1=parent.id).all()
-        return temp.user_id_2
+        return db.query(FriendShipModel).filter_by(user_id_1=parent.id).all()
 
     @token_check
     def resolve_items_owner(parent, info, id_from_token):
@@ -277,26 +278,15 @@ class ItemGroup(SQLAlchemyObjectType):
             return []
 
 
-class Search(Interface):
+class Search(Union):
     class Meta:
         description = "Union returning search of Wishlists, Items and Users"
-        types = (Wishlist, Item, User)
-
-    title = String()
-    id = ID()
-
-    def resolve_type(cls, instance, info):
-        pass
+        types = (Wishlist, Item, User,)
 
 
-class UsersWishlistsAndItems(Interface):
+class UsersWishlistsAndItems(Union):
     class Meta:
         description = "Union returning Wishlists and Items of User"
-        types = (Wishlist, Item)
+        types = (Wishlist, Item,)
 
-    title = String()
-    id = ID()
-
-    def resolve_type(cls, instance, info):
-        pass
 

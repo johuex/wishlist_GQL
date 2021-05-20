@@ -46,12 +46,15 @@ class FriendRequests(Base):
     __tablename__ = "friends_requests"
     user_id_from = Column(Integer, ForeignKey("users.id"), primary_key=True)
     user_id_to = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    request_from_user_info = relationship("User", foreign_keys=[user_id_from])
+    request_to_user_info = relationship("User", foreign_keys=[user_id_to])
 
 
 class FriendShip(Base):
     __tablename__ = "friendship"
     user_id_1 = Column(Integer, ForeignKey("users.id"), primary_key=True)
     user_id_2 = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    friend_info = relationship("User", foreign_keys=[user_id_2])
 
 
 class User(Base):
