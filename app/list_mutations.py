@@ -1,5 +1,5 @@
 from graphene import ObjectType, Mutation, String, Boolean, Argument, ID, InputObjectType, List
-from app.models import Wishlist, Item, AccessLevelEnum
+from app.models import Wishlist, Item, AccessLevelEnum, StatusEnum
 from app.schema import Wishlist as WishlistQl
 from app.database import db_session as db
 from app.auth import token_required, last_seen_set, token_check
@@ -81,6 +81,8 @@ class DeleteWishList(Mutation):
     @token_check
     def mutate(self, info, list_id, id_from_token, with_items):
         wlist = db.query(Wishlist).filter_by(id=list_id).first()
+        if wlist is None:
+            raise Exception("No wishlist with this ID found!")
         if wlist.user_id != id_from_token:
             return DeleteWishList(ok=False, message="Access denied!")
         if with_items:
@@ -107,10 +109,15 @@ class AddItemsToList(Mutation):
     @token_check
     def mutate(self, info, list_id, items_id, id_from_token):
         wlist = db.query(Wishlist).filter_by(id=list_id).first()
+        if wlist is None:
+            raise Exception("No wishlist with this ID found!")
         if wlist.user_id != id_from_token:
             return AddItemsToList(ok=False, message="Access denied!")
         for item_id in items_id:
             item = db.query(Item).filter_by(id=item_id).first()
+            if item.status == StatusEnum.RESERVED or \
+               item.status == StatusEnum.PERFORMED or item.owner_id != id_from_token:
+                continue
             item.list_id = list_id
             item.access_level = wlist.access_level
             db.commit()
@@ -129,6 +136,8 @@ class DeleteItemsFromList(Mutation):
     @token_check
     def mutate(self, info, list_id, items_id, id_from_token):
         wlist = db.query(Wishlist).filter_by(id=list_id).first()
+        if wlist is None:
+            raise Exception("No wishlist with this ID found!")
         if wlist.user_id != id_from_token:
             return DeleteItemsFromList(ok=False, message="Access denied!")
         for item_id in items_id:

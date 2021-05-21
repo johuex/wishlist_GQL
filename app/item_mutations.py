@@ -177,6 +177,7 @@ class ItemPerformed(Mutation):
         if item.owner_id != id_from_token:
             return ItemPerformed(ok=False, message="Access denied!!")
         item.status = StatusEnum.PERFORMED
+        item.list_id = None
         db.commit()
         return ItemPerformed(ok=True, message="Item was performed!")
 

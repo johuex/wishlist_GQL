@@ -55,8 +55,12 @@ class EditGroup(Mutation):
 
     @token_required
     def mutate(self, info, data, id_from_token):
+        data.group_id = int(data.group_id)
+        data.admin_id = int(data.admin_id)
         group = db.query(Group).filter_by(id=data.group_id).first()
-        if int(group.admin_id) != id_from_token:
+        if group is None:
+            raise Exception("No group with this ID found!")
+        if group.admin_id != id_from_token:
             return EditGroup(ok=False, message="Access denied!")
         if data.title is not None and data.title != group.title:
             group.title = data.title
@@ -77,7 +81,10 @@ class DeleteGroup(Mutation):
 
     @token_check
     def mutate(self, info, group_id, id_from_token):
+        group_id = int(group_id)
         group = db.query(Group).filter_by(id=group_id).first()
+        if group is None:
+            raise Exception("No group with this ID found!")
         if group.admin_id != id_from_token:
             return DeleteGroup(ok=False, message="Access denied!")
         db.delete(group)
@@ -95,7 +102,11 @@ class AddItems(Mutation):
 
     @token_check
     def mutate(self, info, group_id, items_id, id_from_token):
+        group_id = int(group_id)
+        items_id = [int(i) for i in items_id]
         group = db.query(Group).filter_by(id=group_id).first()
+        if group is None:
+            raise Exception("No group with this ID found!")
         admin_role = db.query(GroupUser.role_in_group).filter_by(user_id=group.admin_id, group_id=group_id).first()
         user_role = db.query(GroupUser.role_in_group).filter_by(user_id=id_from_token, group_id=group_id).first()
         if admin_role.role_in_group == RoleEnum.FRIENDS:
@@ -128,19 +139,23 @@ class AddLists(Mutation):
 
     @token_check
     def mutate(self, info, group_id, lists_id, id_from_token):
+        group_id = int(group_id)
+        lists_id = [int(i) for i in lists_id]
         group = db.query(Group).filter_by(id=group_id).first()
+        if group is None:
+            raise Exception("No group with this ID found!")
         admin_role = db.query(GroupUser.role_in_group).filter_by(user_id=group.admin_id, group_id=group_id).first()
         user_role = db.query(GroupUser.role_in_group).filter_by(user_id=id_from_token, group_id=group_id).first()
-        if admin_role == RoleEnum.FRIENDS:
-            if user_role is not None and user_role == RoleEnum.FRIENDS:
+        if admin_role.role_in_group == RoleEnum.FRIENDS:
+            if user_role is not None and user_role.role_in_group == RoleEnum.FRIENDS:
                 for list_id in lists_id:
                     i = db.query(Wishlist).filter_by(id=list_id).first()
                     if i.user_id == id_from_token:
                         db.add(GroupList(group_id=group_id, wishlist_id=list_id))
                 db.commit()
                 return AddLists(ok=True, message="WishLists have been added!")
-        if admin_role == RoleEnum.ORGANIZER:
-            if user_role is not None and user_role == RoleEnum.ORGANIZER:
+        if admin_role.role_in_group == RoleEnum.ORGANIZER:
+            if user_role is not None and user_role.role_in_group == RoleEnum.ORGANIZER:
                 for list_id in lists_id:
                     i = db.query(Item).filter_by(id=list_id).first()
                     if i.user_id == id_from_token:
@@ -162,23 +177,27 @@ class AddUsers(Mutation):
 
     @token_check
     def mutate(self, info, group_id, users_id, id_from_token):
+        group_id = int(group_id)
+        users_id = [int(i) for i in users_id]
         group = db.query(Group).filter_by(id=group_id).first()
+        if group is None:
+            raise Exception("No group with this ID found!")
         admin_role = db.query(GroupUser.role_in_group).filter_by(user_id=group.admin_id, group_id=group_id).first()
         user_role = db.query(GroupUser.role_in_group).filter_by(user_id=id_from_token, group_id=group_id).first()
-        if admin_role == RoleEnum.FRIENDS:
-            if user_role is not None and user_role == RoleEnum.FRIENDS:
+        if admin_role.role_in_group == RoleEnum.FRIENDS:
+            if user_role is not None and user_role.role_in_group == RoleEnum.FRIENDS:
                 for user_id in users_id:
                     db.add(GroupUser(group_id=group_id, user_id=user_id, role_in_group=admin_role))
                 db.commit()
                 return AddUsers(ok=True, message="Users have been added!")
-        if admin_role == RoleEnum.ORGANIZER:
-            if user_role is not None and user_role == RoleEnum.ORGANIZER:
+        if admin_role.role_in_group == RoleEnum.ORGANIZER:
+            if user_role is not None and user_role.role_in_group == RoleEnum.ORGANIZER:
                 for user_id in users_id:
                     db.add(GroupUser(group_id=group_id, user_id=user_id, role_in_group=RoleEnum.GUEST))
                 db.commit()
                 return AddUsers(ok=True, message="Users have been added!")
 
-        return AddUsers(ok=True, message="Access denied!")
+        return AddUsers(ok=False, message="Access denied!")
 
 
 class AddOrganizer(Mutation):
@@ -191,11 +210,15 @@ class AddOrganizer(Mutation):
 
     @token_check
     def mutate(self, info, group_id, user_id, id_from_token):
+        group_id = int(group_id)
+        user_id = int(user_id)
         group = db.query(Group).filter_by(id=group_id).first()
+        if group is None:
+            raise Exception("No group with this ID found!")
         admin_role = db.query(GroupUser.role_in_group).filter_by(user_id=group.admin_id, group_id=group_id).first()
         user_role = db.query(GroupUser.role_in_group).filter_by(user_id=id_from_token, group_id=group_id).first()
-        if admin_role == RoleEnum.ORGANIZER:
-            if user_role is not None and user_role == RoleEnum.ORGANIZER:
+        if admin_role.role_in_group == RoleEnum.ORGANIZER:
+            if user_role is not None and user_role.role_in_group == RoleEnum.ORGANIZER:
                 db.add(GroupUser(group_id=group_id, user_id=user_id, role_in_group=RoleEnum.ORGANIZER))
                 db.commit()
                 return AddOrganizer(ok=True, message="Users have been added!")

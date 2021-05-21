@@ -21,7 +21,6 @@ jobs:
       # Step 4
       - name: Activate VENV and install dependencies
         run:  |
-          cd ./wishlist_GQL
           virtualenv -p python3.9 venv
           source ./venv/bin/activate
           pip install -r requirements.txt
@@ -37,7 +36,7 @@ jobs:
       - name: Install AWS CLI
         uses: unfor19/install-aws-cli-action@v1
         with:
-          version: 1
+          version: 2
         env:
           AWS_SECRET_ACCESS_KEY_ID: ${{secrets.AWS_SECRET_ACCESS_KEY_ID}}
           AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
@@ -59,8 +58,3 @@ jobs:
           AWS_SECRET_ACCESS_KEY_ID: ${{secrets.AWS_SECRET_ACCESS_KEY_ID}}
           AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
           AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
-      # Step 3
-      - name: Run UVICORN
-        run: |
-          source ./venv/bin/activate
-          uvicorn main:app --host 0.0.0.0 --port 8000

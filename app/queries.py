@@ -19,11 +19,14 @@ class Query(ObjectType):
     group = Field(GroupQl, group_id=ID(required=True), description="Return group by ID")
     news = Field(lambda: List(WaIQL), description="News from friends of user")
     index = Field(lambda: List(WaIQL), description="All open items and wishlists of all users on this service")
-    search = Field(lambda: List(SearchQL), search_text=String(required=True), description="Search in users, items, wishlists, groups")
+    search = Field(lambda: List(SearchQL), search_text=String(required=True),
+                   description="Search in nicknames, usernames and surnames of users and titles of items, wishlists and groups")
 
     @token_check
     @last_seen_set
     async def resolve_me(parent, info, id_from_token):
+        if id_from_token == 0:
+            raise Exception("For returning yourself token required!")
         return db.query(UserDB).filter_by(id=int(id_from_token)).first()
 
     @last_seen_set
