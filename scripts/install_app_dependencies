@@ -1,0 +1,8 @@
+#!/bin/bash
+sudo pip3 install virtualenv
+cd /home/ubuntu/wishlist_GQL
+if [! -f ./venv]; then
+    virtualenv venv
+fi
+source venv/bin/activate
+sudo pip3 install -r requirements.txt
