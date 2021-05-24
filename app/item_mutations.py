@@ -64,6 +64,8 @@ class EditItem(Mutation):
     @last_seen_set
     def mutate(root, info, data, id_from_token):
         item = db.query(Item).filter_by(id=data.item_id).first()
+        if item is None:
+            raise Exception("No item was found with this ID!")
         if int(item.owner_id) != id_from_token:
             return EditItem(ok=False, message="Access denied!")
         if data.title is not None and data.title != item.title:
@@ -88,8 +90,10 @@ class DeleteItem(Mutation):
     message = String()
 
     @token_check
-    def mutate(self, info, item_id, owner_id, id_from_token):
+    def mutate(self, info, item_id, id_from_token):
         item = db.query(Item).filter_by(id=item_id).first()
+        if item is None:
+            raise Exception("No item was found with this ID!")
         if item.owner_id != id_from_token:
             return DeleteItem(ok=False, message="Access denied!")
         # TODO если не работают Cascade, то нужно удалять в остальных таблицах вручную
@@ -109,8 +113,11 @@ class AddPictures(Mutation):
     @token_check
     def mutate(self, info, files,  item_id, id_from_token):
         item = db.query(Item).filter_by(id=item_id).first()
+        if item is None:
+            raise Exception("No item was found with this ID!")
         if item.owner_id != id_from_token:
             return AddPictures(ok=False, message="Access denied!")
+        # TODO maybe change names for pictures?
         i = 0
         for pic in files:
             if check_format(pic):
@@ -139,7 +146,9 @@ class RemovePictures(Mutation):
             return RemovePictures(ok=False, message="No URLs to delete pictures!")
         for pic in urls:
             item_path = db.query(ItemPicture).filter_by(path_to_picture=pic).first()
-            item = db.query(Item).filter_by(id = item_path.item_id).first()
+            item = db.query(Item).filter_by(id=item_path.item_id).first()
+            if item.owner_id != id_from_token:
+                raise Exception("Access denied!")
             if delete_file(Config.bucket, item_path.path_to_picture):
                 db.delete(item_path)
                 db.commit()
@@ -156,8 +165,14 @@ class SetGiverId(Mutation):
     @token_check
     def mutate(self, info,item_id, id_from_token):
         item = db.query(Item).filter_by(id=item_id).first()
+        if item is None:
+            raise Exception("No item was found with this ID!")
         if item.giver_id is not None:
             return SetGiverId(ok=False, message="This item has already reserved!")
+        if item.status == StatusEnum.PERFORMED:
+            raise Exception("This item is already performed!")
+        if item.status == StatusEnum.RESERVED:
+            raise Exception("This item is already reserved!")
         item.giver_id = id_from_token
         item.status = StatusEnum.RESERVED
         db.commit()
@@ -174,8 +189,12 @@ class ItemPerformed(Mutation):
     @token_check
     def mutate(self, info, item_id, id_from_token):
         item = db.query(Item).filter_by(id=item_id).first()
+        if item is None:
+            raise Exception("No item was found with this ID!")
         if item.owner_id != id_from_token:
             return ItemPerformed(ok=False, message="Access denied!!")
+        if item.status == StatusEnum.PERFORMED:
+            raise Exception("This item is already performed!")
         item.status = StatusEnum.PERFORMED
         item.list_id = None
         db.commit()

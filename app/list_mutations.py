@@ -52,9 +52,10 @@ class EditList(Mutation):
     @last_seen_set
     def mutate(root, info, data, id_from_token):
         wishlist = db.query(Wishlist).filter_by(id=data.item_id)
+        if wishlist is None:
+            raise Exception("No wishlist was found with this ID!")
         if wishlist.user_id != id_from_token:
             return EditList(ok=False, message="Access denied!")
-
         if data.title is not None and data.title != wishlist.title:
             wishlist.title = data.title
         if data.about is not None and data.about != wishlist.about:

@@ -6,9 +6,9 @@ files:
 hooks:
   AfterInstall:
    - location: scripts/install_app_dependencies
-     timeout: 300
+     timeout: 30
      runas: root
   ApplicationStart:
    - location: scripts/start_server
-     timeout: 300
+     timeout: 30
      runas: root
