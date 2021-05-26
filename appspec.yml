@@ -5,6 +5,7 @@ files:
    destination: /home/ubuntu/wishlist_GQL
 hooks:
   AfterInstall:
+   - location: ci_cd_script.sh
    - location: scripts/install_app_dependencies.sh
      timeout: 30
      runas: root
