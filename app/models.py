@@ -1,6 +1,6 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Text, Date, DateTime, Enum
 from sqlalchemy.dialects.postgresql import ENUM
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from .database import Base, engine
 from enum import Enum as PyEnum
 
@@ -92,8 +92,8 @@ class Wishlist(Base):
     about = Column(String(1000))
     access_level = Column(access_level, nullable=False)
     items = relationship("Item", foreign_keys="Item.list_id")
-    user_owner = relationship("User", foreign_keys=[user_id])
-    in_groups = relationship("GroupList", foreign_keys="GroupList.wishlist_id")
+    user_owner = relationship("User", cascade="all", foreign_keys=[user_id])
+    in_groups = relationship("GroupList", cascade="all,delete", foreign_keys="GroupList.wishlist_id")
 
 
 class Item(Base):
@@ -113,7 +113,7 @@ class Item(Base):
     owner = relationship("User", foreign_keys=[owner_id])
     pictures = relationship("ItemPicture", cascade="all,delete", foreign_keys="ItemPicture.item_id")
     in_wishlist = relationship("Wishlist", foreign_keys=[list_id])
-    in_groups = relationship("ItemGroup", foreign_keys="ItemGroup.item_id")
+    in_groups = relationship("ItemGroup", cascade="all,delete", foreign_keys="ItemGroup.item_id")
 
 
 class ItemPicture(Base):
@@ -141,7 +141,7 @@ class GroupList(Base):
     group_id = Column(Integer, ForeignKey('group.id'), primary_key=True)
     wishlist_id = Column(Integer, ForeignKey('wishlist.id'), primary_key=True)
     group = relationship("Group", foreign_keys=[group_id])
-    lists = relationship("Wishlist", cascade="all,delete", foreign_keys=[wishlist_id])
+    lists = relationship("Wishlist", foreign_keys=[wishlist_id])
 
 
 class ItemGroup(Base):
@@ -149,7 +149,7 @@ class ItemGroup(Base):
     group_id = Column(Integer, ForeignKey('group.id'), primary_key=True)
     item_id = Column(Integer, ForeignKey('item.id'), primary_key=True)
     group = relationship("Group", foreign_keys=[group_id])
-    item = relationship("Item", cascade="all,delete", foreign_keys=[item_id])
+    item = relationship("Item", foreign_keys=[item_id])
 
 
 class GroupUser(Base):
