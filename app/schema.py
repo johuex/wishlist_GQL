@@ -3,7 +3,7 @@ from graphene import relay, Union, Enum, Interface, String, ID
 from app.models import User as UserModel, FriendRequests as FriendRequestsModel, FriendShip as FriendShipModel,\
     Item as ItemModel, Group as GroupModel, Wishlist as WishlistModel,\
     ItemPicture as ItemPictureModel, GroupUser as GroupUserModel, GroupList as GroupListModel, \
-    ItemGroup as ItemGroupModel, AccessLevelEnum, GroupAccessEnum
+    ItemGroup as ItemGroupModel, AccessLevelEnum, GroupAccessEnum, StatusEnum
 from app.auth import token_check, last_seen_set
 from app.database import db_session as db
 from graphene_sqlalchemy import SQLAlchemyObjectType
@@ -81,12 +81,12 @@ class Wishlist(SQLAlchemyObjectType):
     @token_check
     def resolve_items(parent, info, id_from_token):
         if parent.access_level == AccessLevelEnum.ALL:
-            return db.query(ItemModel).filter_by(list_id=parent.id).all()
+            return db.query(ItemModel).filter_by(list_id=parent.id, status=StatusEnum.FREE).all()
         if parent.access_level == AccessLevelEnum.NOBODY and parent.user_id == id_from_token:
-            return db.query(ItemModel).filter_by(list_id=parent.id).all()
+            return db.query(ItemModel).filter_by(list_id=parent.id, status=StatusEnum.FREE).all()
         if parent.access_level == AccessLevelEnum.FRIENDS and db.query(FriendShipModel).filter_by(user_id_1=parent.user_id,
                                                                              user_id_2=id_from_token).first():
-            return db.query(ItemModel).filter_by(list_id=parent.id, access_level=AccessLevelEnum.FRIENDS).all()
+            return db.query(ItemModel).filter_by(list_id=parent.id, access_level=AccessLevelEnum.FRIENDS, status=StatusEnum.FREE).all()
         return []
 
     @token_check
@@ -170,7 +170,8 @@ class User(SQLAlchemyObjectType):
     @token_check
     def resolve_items_owner(parent, info, id_from_token):
         response = list()
-        items = db.query(ItemModel).filter_by(owner_id=parent.id, list_id=None).all()
+        # скрыть те, которые зарезервированы
+        items = db.query(ItemModel).filter_by(owner_id=parent.id, list_id=None, status=StatusEnum.FREE).all()
         if len(items) == 0:
             return items
         for item in items:

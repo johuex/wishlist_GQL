@@ -22,7 +22,7 @@ def create_app():
                               executor_class=AsyncioExecutor,
                               graphiql=True,))
     ]
-    middleware = [Middleware(CORSMiddleware, allow_origins=['*'], allow_headers=['*'])]
+    middleware = [Middleware(CORSMiddleware, allow_origins=['*'], allow_headers=['*'], allow_methods=['*'])]
     app = Starlette(routes=routes, middleware=middleware)
     return app
 
