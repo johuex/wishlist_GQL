@@ -18,6 +18,18 @@ class FriendRequests(SQLAlchemyObjectType):
         interfaces = (relay.Node,)
         exclude_fields = ('user_id_from', 'user_id_to',)
 
+    @token_check
+    def resolve_request_from_user_info(parent, info, id_from_token):
+        if id_from_token == parent.user_id_to:
+            return db.query(UserModel).filter_by(id=parent.user_id_from).first()
+        return None
+
+    @token_check
+    def resolve_request_to_user_info(parent, info, id_from_token):
+        if id_from_token == parent.user_id_from:
+            return db.query(UserModel).filter_by(id=parent.user_id_to).first()
+        return None
+
 
 class FriendShip(SQLAlchemyObjectType):
     class Meta:
@@ -25,6 +37,9 @@ class FriendShip(SQLAlchemyObjectType):
         model = FriendShipModel
         interfaces = (relay.Node,)
         exclude_fields = ('user_id_1', 'user_id_2',)
+
+    def resolve_friend_info(parent, info):
+        return db.query(UserModel).filter_by(id=parent.user_id_2).first()
 
 
 class Item(SQLAlchemyObjectType):
@@ -136,7 +151,7 @@ class User(SQLAlchemyObjectType):
         description = 'Table of Users'
         model = UserModel
         interfaces = (relay.Node,)  # interfaces where Users used
-        exclude_fields = ('password_hash', 'token', 'refresh_token', 'users_lists', 'email')
+        exclude_fields = ('password_hash', 'token', 'refresh_token', 'users_lists')
 
     @token_check
     def resolve_user_lists(parent, info, id_from_token):
