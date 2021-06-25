@@ -1,6 +1,6 @@
 import random
 
-from graphene import ObjectType, Mutation, String, Boolean, Date, ID, InputObjectType
+from graphene import ObjectType, Mutation, String, Boolean, Date, ID, InputObjectType, Field
 from graphene_file_upload.scalars import Upload
 from app.models import User, FriendShip as FS, FriendRequests as FR
 from app.database import db_session as db
@@ -8,6 +8,7 @@ from app.auth import au, token_required, last_seen_set, token_check
 from app.config import Config
 from app.s3 import *
 from app.email_server import e_host
+from app.schema import User as Usersch
 
 
 class UserInputRegistration(InputObjectType):
@@ -109,6 +110,7 @@ class EditUser(Mutation):
 
     ok = Boolean()
     message = String()
+    edited_person = Field(lambda: Usersch)
 
     @token_required
     @last_seen_set
@@ -135,7 +137,7 @@ class EditUser(Mutation):
             user.phone_number = data.phone_number
 
         db.commit()
-        return EditUser(ok=True, message="User edited!")
+        return EditUser(ok=True, message="User edited!", edited_person=user)
 
 
 class RefreshToken(Mutation):

@@ -79,8 +79,9 @@ class User(Base):
     user_lists = relationship("Wishlist", cascade="all,delete", foreign_keys="Wishlist.user_id")
     friend_requests = relationship("FriendRequests", cascade="all,delete", foreign_keys="FriendRequests.user_id_from")
     friends = relationship("FriendShip", cascade="all,delete", foreign_keys="FriendShip.user_id_1")
-    items_owner = relationship("Item", cascade="all,delete", foreign_keys="Item.owner_id")
-    items_giver = relationship("Item", cascade="all", foreign_keys="Item.giver_id")
+    items_owner = relationship("Item", cascade="all,delete", foreign_keys="Item.owner_id", doc='owner')
+    items_performed = relationship("Item", cascade="all,delete", foreign_keys="Item.owner_id")
+    items_giver = relationship("Item", cascade="all", foreign_keys="Item.giver_id")  # Performed wishes of user
     groups = relationship("GroupUser", cascade="all,delete", foreign_keys="GroupUser.user_id")
 
 

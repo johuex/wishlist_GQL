@@ -1,4 +1,4 @@
-from graphene import ObjectType, Mutation, String, Boolean, Enum, ID, InputObjectType, List, Argument
+from graphene import ObjectType, Mutation, String, Boolean, Enum, ID, InputObjectType, List, Argument, Field
 from graphene_file_upload.scalars import Upload
 from app.models import Item, ItemPicture, DegreeEnum, AccessLevelEnum, StatusEnum
 from app.schema import Item as ItemQl
@@ -7,6 +7,7 @@ from app.auth import token_required, last_seen_set, token_check
 from datetime import datetime
 from app.s3 import *
 from app.config import Config
+from app.schema import Item as Itemsch
 
 
 class ItemAddInput(InputObjectType):
@@ -59,6 +60,7 @@ class EditItem(Mutation):
 
     ok = Boolean()
     message = String()
+    edited_item = Field(lambda: Itemsch)
 
     @token_required
     @last_seen_set
@@ -79,7 +81,7 @@ class EditItem(Mutation):
         if data.degree is not None and data.degree != item.degree:
             item.degree = AccessLevelEnum(data.degree)
         db.commit()
-        return EditItem(ok=True, message="Item edited!")
+        return EditItem(ok=True, message="Item edited!", edited_item=item)
 
 
 class DeleteItem(Mutation):

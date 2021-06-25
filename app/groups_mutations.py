@@ -1,4 +1,4 @@
-from graphene import ObjectType, Mutation, ID, Boolean, String, InputObjectType, Date, Argument, List
+from graphene import ObjectType, Mutation, ID, Boolean, String, InputObjectType, Date, Argument, List, Field
 from app.auth import token_required, token_check
 from app.database import db_session as db
 from app.models import Group, GroupUser, GroupList, ItemGroup, GroupAccessEnum, RoleEnum, Item, Wishlist
@@ -52,6 +52,7 @@ class EditGroup(Mutation):
 
     ok = Boolean()
     message = String()
+    edited_group = Field(lambda: GroupQl)
 
     @token_required
     def mutate(self, info, data, id_from_token):
@@ -69,7 +70,7 @@ class EditGroup(Mutation):
         if data.access_level is not None and data.access_level != group.access_level:
             group.access_level = GroupAccessEnum(data.access_level)
         db.commit()
-        return EditGroup(ok=True, message="Item edited!")
+        return EditGroup(ok=True, message="Item edited!", edited_group=group)
 
 
 class DeleteGroup(Mutation):

@@ -1,8 +1,9 @@
-from graphene import ObjectType, Mutation, String, Boolean, Argument, ID, InputObjectType, List
+from graphene import ObjectType, Mutation, String, Boolean, Argument, ID, InputObjectType, List, Field
 from app.models import Wishlist, Item, AccessLevelEnum, StatusEnum
 from app.schema import Wishlist as WishlistQl
 from app.database import db_session as db
 from app.auth import token_required, last_seen_set, token_check
+from app.schema import Wishlist as Listsch
 
 
 class ListAddInput(InputObjectType):
@@ -47,6 +48,7 @@ class EditList(Mutation):
 
     ok = Boolean()
     message = String()
+    edited_list = Field(lambda: Listsch)
 
     @token_required
     @last_seen_set
@@ -67,7 +69,7 @@ class EditList(Mutation):
             for item in items_in_list:
                 item.access_level = a_level
         db.commit()
-        return EditList(ok=True, message="Wishlist edited!")
+        return EditList(ok=True, message="Wishlist edited!", edited_list=wishlist)
 
 
 class DeleteWishList(Mutation):
