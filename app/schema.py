@@ -3,7 +3,7 @@ from graphene import relay, Union, Enum, Interface, String, ID
 from app.models import User as UserModel, FriendRequests as FriendRequestsModel, FriendShip as FriendShipModel,\
     Item as ItemModel, Group as GroupModel, Wishlist as WishlistModel,\
     ItemPicture as ItemPictureModel, GroupUser as GroupUserModel, GroupList as GroupListModel, \
-    ItemGroup as ItemGroupModel, AccessLevelEnum, GroupAccessEnum, StatusEnum
+    ItemGroup as ItemGroupModel, AccessLevelEnum, GroupAccessEnum
 from app.auth import token_check, last_seen_set
 from app.database import db_session as db
 from graphene_sqlalchemy import SQLAlchemyObjectType
@@ -170,7 +170,7 @@ class User(SQLAlchemyObjectType):
     @token_check
     def resolve_items_owner(parent, info, id_from_token):
         response = list()
-        items = db.query(ItemModel).filter_by(owner_id=parent.id, list_id=None, status=StatusEnum.FREE).all()
+        items = db.query(ItemModel).filter_by(owner_id=parent.id, list_id=None).all()
         if len(items) == 0:
             return items
         for item in items:
@@ -187,14 +187,12 @@ class User(SQLAlchemyObjectType):
 
     @token_check
     def resolve_items_giver(parent, info, id_from_token):
-        """items, reserved by user"""
-        items = db.query(ItemModel).filter_by(giver_id=id_from_token).all()
-        return items
-
-    def resolve_items_performed(parent, info):
-        """user's performed items"""
-        items = db.query(ItemModel).filter_by(owner_id=parent.id, status=StatusEnum.PERFORMED).all()
-        return items
+        item = db.query(ItemModel).filter_by(owner_id=id_from_token).first()
+        if len(item) == 0:
+            return item
+        if item.giver_id == id_from_token:
+            return item
+        return []
 
     def resolve_userpic(parent, info):
         """return url to download picture"""
