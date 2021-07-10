@@ -5,6 +5,7 @@ from starlette.applications import Starlette
 from starlette.graphql import GraphQLApp
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from starlette.routing import Route
 
 from app.queries import Query
@@ -22,7 +23,8 @@ def create_app():
                               executor_class=AsyncioExecutor,
                               graphiql=True,))
     ]
-    middleware = [Middleware(CORSMiddleware, allow_origins=['*'], allow_headers=['*'], allow_methods=['*'])]
+    middleware = [Middleware(CORSMiddleware, allow_origins=['*'], allow_headers=['*'], allow_methods=['*']),
+                  Middleware(HTTPSRedirectMiddleware)]
     app = Starlette(routes=routes, middleware=middleware)
     return app
 
