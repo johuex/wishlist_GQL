@@ -1,5 +1,5 @@
 """GQL Schema description"""
-from graphene import relay, Union, Enum, Interface, String, ID
+from graphene import relay, Union, List, Field, String
 from app.models import User as UserModel, FriendRequests as FriendRequestsModel, FriendShip as FriendShipModel,\
     Item as ItemModel, Group as GroupModel, Wishlist as WishlistModel,\
     ItemPicture as ItemPictureModel, GroupUser as GroupUserModel, GroupList as GroupListModel, \
@@ -27,28 +27,37 @@ class FriendShip(SQLAlchemyObjectType):
         exclude_fields = ('user_id_1', 'user_id_2',)
 
 
+class ItemPictures(SQLAlchemyObjectType):
+    class Meta:
+        description = "Table for picture's path of items"
+        model = ItemPictureModel
+        interfaces = (relay.Node,)
+
+
 class Item(SQLAlchemyObjectType):
     class Meta:
         description = "Table for items"
         model = ItemModel
         interfaces = (relay.Node,)
 
+    pictures = Field(lambda: List(String))
+
     @token_check
     def resolve_pictures(parent, info, id_from_token):
         responce = list()
         if parent.access_level == AccessLevelEnum.ALL:
-            items = db.query(ItemPicture).filter_by(item_id=parent.id).all()
+            items = db.query(ItemPictureModel).filter_by(item_id=parent.id).all()
             for pic in items:
                 responce.append(download_file(Config.bucket, pic.path_to_picture))
             return responce
         if parent.access_level == AccessLevelEnum.NOBODY and parent.owner_id == id_from_token:
-            items = db.query(ItemPicture).filter_by(item_id=parent.id).all()
+            items = db.query(ItemPictureModel).filter_by(item_id=parent.id).all()
             for pic in items:
                 responce.append(download_file(Config.bucket, pic.path_to_picture))
             return responce
         if parent.access_level == AccessLevelEnum.FRIENDS and db.query(FriendShipModel).filter_by(user_id_1=parent.owner_id,
                                                                        user_id_2=id_from_token).first():
-            items = db.query(ItemPicture).filter_by(item_id=parent.id).all()
+            items = db.query(ItemPictureModel).filter_by(item_id=parent.id).all()
             for pic in items:
                 responce.append(download_file(Config.bucket, pic.path_to_picture))
             return responce

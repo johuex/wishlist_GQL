@@ -3,7 +3,7 @@ import random
 from graphene import ObjectType, Mutation, String, Boolean, Date, ID, InputObjectType, Field
 from graphene_file_upload.scalars import Upload
 from app.models import User, FriendShip as FS, FriendRequests as FR
-from app.database import db_session as db
+from app.database import db_session as db, commit_with_check
 from app.auth import au, token_required, last_seen_set, token_check
 from app.config import Config
 from app.s3 import *
@@ -53,7 +53,7 @@ class ClassicRegisterUser(Mutation):
         new_user = User(email=user_data.email, password_hash=au.get_password_hash(user_data.password),
                          user_name=user_data.user_name, nickname=user_data.nickname, userpic="users/user_0.png")
         db.add(new_user)
-        db.commit()
+        commit_with_check(db)
         db.refresh(new_user)
         return ClassicRegisterUser(ok=True, message="Registration done!", ID=new_user.id)
 
@@ -74,7 +74,7 @@ class FastRegisterUser(Mutation):
         e_host.send_email(user_data.email, "Confirm actions", user_data.user_name, "other/fast_registration.txt", code)
         new_user = User(email=user_data.email, user_name=user_data.user_name, password_hash=au.get_password_hash(code))
         db.add(new_user)
-        db.commit()
+        commit_with_check(db)
         db.refresh(new_user)
         return ClassicRegisterUser(ok=True, message="Registration done!", ID=new_user.id)
 
@@ -97,7 +97,7 @@ class LoginUser(Mutation):
             refresh_token = au.encode_token(user.id, experation=1440)  # 1440 min = 1 day
             user.token = token
             user.refresh_token = refresh_token
-            db.commit()
+            commit_with_check(db)
             return LoginUser(ok=True, message="Token issued", token=token, refresh_token=refresh_token)
         else:
             return LoginUser(ok=False, message="Invalid password or email")
@@ -136,7 +136,7 @@ class EditUser(Mutation):
         if data.phone_number is not None and data.phone_number != user.phone_number:
             user.phone_number = data.phone_number
 
-        db.commit()
+        commit_with_check(db)
         return EditUser(ok=True, message="User edited!", edited_person=user)
 
 
@@ -157,7 +157,7 @@ class RefreshToken(Mutation):
             return RefreshToken(ok=False, message="ERROR!")
         user.token = au.encode_token(user.id)
         user.refresh_token = au.encode_token(user.id, experation=1440)
-        db.commit()
+        commit_with_check(db)
         return RefreshToken(ok=False, message="ERROR!", access_token=user.token, refresh_token=user.refresh_token)
 
 
@@ -195,7 +195,7 @@ class SendFriendRequest(Mutation):
         if db.query(FR).filter_by(user_id_from=id_from_token, user_id_to=to_user_id).first() is not None:
             SendFriendRequest(ok=False, message="You have already sent friend request to this user!")
         db.add(FR(user_id_from=id_from_token, user_id_to=to_user_id))
-        db.commit()
+        commit_with_check(db)
         return SendFriendRequest(ok=True, message="Friend request has been sent!")
 
 
@@ -214,7 +214,7 @@ class AcceptFriendRequest(Mutation):
             db.add(FS(user_id_1=from_user_id, user_id_2=id_from_token))
             db.add(FS(user_id_2=from_user_id, user_id_1=id_from_token))
             db.delete(fr)
-            db.commit()
+            commit_with_check(db)
             return AcceptFriendRequest(ok=True, message="Friend request has been accepted!")
         else:
             return AcceptFriendRequest(ok=False, message="Friend request hasn't been accepted!")
@@ -232,7 +232,7 @@ class RejectFriendRequest(Mutation):
         fr = db.query(FR).filter_by(user_id_from=from_user_id, user_id_to=id_from_token).first()
         if fr is not None:
             db.delete(fr)
-            db.commit()
+            commit_with_check(db)
             return RejectFriendRequest(ok=True, message="Friend request has been rejected!")
         else:
             return RejectFriendRequest(ok=False, message="Friend request hasn't been rejected!")
@@ -253,7 +253,7 @@ class CancelFriendRequest(Mutation):
         fr = db.query(FR).filter_by(user_id_from=id_from_token, user_id_to=to_user_id).first()
         if fr is not None:
             db.delete(fr)
-            db.commit()
+            commit_with_check(db)
             return CancelFriendRequest(ok=True, message="Friend request has been canceled!")
         else:
             return CancelFriendRequest(ok=True, message="Friend request hasn't been canceled!")
@@ -273,7 +273,7 @@ class RemoveFromFriends(Mutation):
         if fr1 is not None and fr2 is not None:
             db.delete(fr1)
             db.delete(fr2)
-            db.commit()
+            commit_with_check(db)
             return RemoveFromFriends(ok=True, message="Friend has been removed :-(")
         else:
             return RemoveFromFriends(ok=True, message="Friend hasn't been removed :-)")
@@ -293,7 +293,7 @@ class UploadUserPicture(Mutation):
             name = 'users/user_' + str(user.id)
             if upload_file(user_pic, Config.bucket, name):
                 user.userpic = name
-                db.commit()
+                commit_with_check(db)
                 return UploadUserPicture(ok=True, message="Userpic have been uploaded")
         return UploadUserPicture(ok=False, message="Userpic haven't been upload")
 
@@ -312,7 +312,7 @@ class ResetPassword(Mutation):
         code = random.randint(100000, 999999)
         e_host.send_email(user.email, "Confirm actions", user.user_name, "other/reset_password.txt", code)
         user.password_hash = au.get_password_hash(str(code))
-        db.commit()
+        commit_with_check(db)
         return ResetPassword(ok=True, message="Confirm email send to your email!")
 
 

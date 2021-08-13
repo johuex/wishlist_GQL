@@ -2,7 +2,7 @@ from graphene import ObjectType, Mutation, String, Boolean, Enum, ID, InputObjec
 from graphene_file_upload.scalars import Upload
 from app.models import Item, ItemPicture, DegreeEnum, AccessLevelEnum, StatusEnum
 from app.schema import Item as ItemQl
-from app.database import db_session as db
+from app.database import db_session as db, commit_with_check
 from app.auth import token_required, last_seen_set, token_check
 from datetime import datetime
 from app.s3 import *
@@ -48,7 +48,7 @@ class AddItem(Mutation):
                     list_id=data.list_id, degree=degree, status='FREE', date_for_status=datetime.utcnow(),
                     date_creation=datetime.utcnow())
         db.add(new_item)
-        db.commit()
+        commit_with_check(db)
         db.refresh(new_item)
         db.add(ItemPicture(item_id=new_item.id, path_to_picture='items/item_0.png'))
         return AddItem(ok=True, message="Item added!", ID=new_item.id)
@@ -80,7 +80,7 @@ class EditItem(Mutation):
             item.list_id = data.list_id
         if data.degree is not None and data.degree != item.degree:
             item.degree = AccessLevelEnum(data.degree)
-        db.commit()
+        commit_with_check(db)
         return EditItem(ok=True, message="Item edited!", edited_item=item)
 
 
@@ -100,7 +100,7 @@ class DeleteItem(Mutation):
             return DeleteItem(ok=False, message="Access denied!")
         # TODO если не работают Cascade, то нужно удалять в остальных таблицах вручную
         db.delete(item)
-        db.commit()
+        commit_with_check(db)
         return DeleteItem(ok=True, message="Item deleted!")
 
 
@@ -127,7 +127,7 @@ class AddPictures(Mutation):
                 name = 'items/item_'+str(item.id)+'_'+str(i)
                 if upload_file(pic, Config.bucket, name):
                     db.add(ItemPicture(item_id=item.id, path_to_picture=name))
-                    db.commit()
+                    commit_with_check(db)
                 else:
                     return AddPictures(ok=False, message="Pictures haven't been uploaded!")
             else:
@@ -153,7 +153,7 @@ class RemovePictures(Mutation):
                 raise Exception("Access denied!")
             if delete_file(Config.bucket, item_path.path_to_picture):
                 db.delete(item_path)
-                db.commit()
+                commit_with_check(db)
         return RemovePictures(ok=True, message="Pictures have been deleted!")
 
 
@@ -177,7 +177,7 @@ class SetGiverId(Mutation):
             raise Exception("This item is already reserved!")
         item.giver_id = id_from_token
         item.status = StatusEnum.RESERVED
-        db.commit()
+        commit_with_check(db)
         return SetGiverId(ok=True, message="Item was reserved!!")
 
 
@@ -199,7 +199,7 @@ class ItemPerformed(Mutation):
             raise Exception("This item is already performed!")
         item.status = StatusEnum.PERFORMED
         item.list_id = None
-        db.commit()
+        commit_with_check(db)
         return ItemPerformed(ok=True, message="Item was performed!")
 
 

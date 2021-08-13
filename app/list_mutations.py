@@ -1,7 +1,7 @@
 from graphene import ObjectType, Mutation, String, Boolean, Argument, ID, InputObjectType, List, Field
 from app.models import Wishlist, Item, AccessLevelEnum, StatusEnum
 from app.schema import Wishlist as WishlistQl
-from app.database import db_session as db
+from app.database import db_session as db, commit_with_check
 from app.auth import token_required, last_seen_set, token_check
 from app.schema import Wishlist as Listsch
 
@@ -36,7 +36,7 @@ class AddList(Mutation):
         a_level = AccessLevelEnum(data.access_level)
         new_list = Wishlist(title=data.title, user_id=id_from_token, about=data.about, access_level=a_level)
         db.add(new_list)
-        db.commit()
+        commit_with_check(db)
         db.refresh(new_list)
         return AddList(ok=True, message="Wishlist added!", ID=new_list.id)
 
@@ -68,7 +68,7 @@ class EditList(Mutation):
             items_in_list = db.query(Item).filter_by(list_id=wishlist.id).all()
             for item in items_in_list:
                 item.access_level = a_level
-        db.commit()
+        commit_with_check(db)
         return EditList(ok=True, message="Wishlist edited!", edited_list=wishlist)
 
 
@@ -91,7 +91,7 @@ class DeleteWishList(Mutation):
         if with_items:
             # TODO если не работают Cascade, то нужно удалять в остальных таблицах вручную
             db.delete(wlist)
-            db.commit()
+            commit_with_check(db)
             return DeleteWishList(ok=True, message="Wishlist deleted with items!")
         else:
             items_in_list = db.query(Item).filter_by(list_id=list_id).all()
@@ -123,7 +123,7 @@ class AddItemsToList(Mutation):
                 continue
             item.list_id = list_id
             item.access_level = wlist.access_level
-            db.commit()
+            commit_with_check(db)
         return AddItemsToList(ok=True, message="Items were added to wishlist!")
 
 
@@ -147,7 +147,7 @@ class DeleteItemsFromList(Mutation):
             item = db.query(Item).filter_by(id=item_id).first()
             item.list_id = None
             item.access_level = AccessLevelEnum.NOBODY
-            db.commit()
+            commit_with_check(db)
         return DeleteItemsFromList(ok=True, message="Items were deleted from wishlist and were pasted to default wishlist!")
 
 
