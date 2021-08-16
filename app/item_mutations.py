@@ -1,13 +1,12 @@
 from graphene import ObjectType, Mutation, String, Boolean, Enum, ID, InputObjectType, List, Argument, Field
 from graphene_file_upload.scalars import Upload
-from app.models import Item, ItemPicture, DegreeEnum, AccessLevelEnum, StatusEnum
-from app.schema import Item as ItemQl
+from app.models import Item, ItemPicture, DegreeEnum, AccessLevelEnum, StatusEnum, User
+from app.schema import Item as ItemQl, User as UserQl
 from app.database import db_session as db, commit_with_check
 from app.auth import token_required, last_seen_set, token_check
 from datetime import datetime
 from app.s3 import *
 from app.config import Config
-from app.schema import Item as Itemsch
 
 
 class ItemAddInput(InputObjectType):
@@ -60,7 +59,7 @@ class EditItem(Mutation):
 
     ok = Boolean()
     message = String()
-    edited_item = Field(lambda: Itemsch)
+    edited_item = Field(lambda: ItemQl)
 
     @token_required
     @last_seen_set
@@ -163,9 +162,10 @@ class SetGiverId(Mutation):
 
     ok = Boolean()
     message = String()
+    user_ = Field(lambda: UserQl)
 
     @token_check
-    def mutate(self, info,item_id, id_from_token):
+    def mutate(self, info, item_id, id_from_token):
         item = db.query(Item).filter_by(id=item_id).first()
         if item is None:
             raise Exception("No item was found with this ID!")
@@ -174,11 +174,19 @@ class SetGiverId(Mutation):
         if item.status == StatusEnum.PERFORMED:
             raise Exception("This item is already performed!")
         if item.status == StatusEnum.RESERVED:
-            raise Exception("This item is already reserved!")
+            if item.giver_id == id_from_token:
+                # cancel reservation by giver_id user
+                item.giver_id = None
+                commit_with_check(db)
+                user = db.query(User).filter_by(id=item.owner_id).first()
+                return SetGiverId(ok=True, message="Reserving of item is canceled!!", user_=user)
+            else:
+                raise Exception("This item is already reserved!")
         item.giver_id = id_from_token
         item.status = StatusEnum.RESERVED
         commit_with_check(db)
-        return SetGiverId(ok=True, message="Item was reserved!!")
+        user = db.query(User).filter_by(id=item.owner_id).first()
+        return SetGiverId(ok=True, message="Item was reserved!!", user_=user)
 
 
 class ItemPerformed(Mutation):
@@ -208,7 +216,7 @@ class ItemMutation(ObjectType):
     edit_item = EditItem.Field()
     delete_item = DeleteItem.Field()
     add_pictures = AddPictures.Field()
-    remove_pictures = AddPictures.Field()
+    remove_pictures = RemovePictures.Field()
     set_giver_id = SetGiverId.Field()
     item_performed = ItemPerformed.Field()
 

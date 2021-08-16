@@ -92,6 +92,8 @@ class LoginUser(Mutation):
 
     def mutate(self, info, email, password):
         user = db.query(User).filter_by(email=email).first()
+        if user is None:
+            return LoginUser(ok=False, message="Invalid password or email")
         if au.verify_password(password, user.password_hash):
             token = au.encode_token(user.id)
             refresh_token = au.encode_token(user.id, experation=1440)  # 1440 min = 1 day
