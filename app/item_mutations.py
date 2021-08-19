@@ -46,10 +46,17 @@ class AddItem(Mutation):
         new_item = Item(title=data.title, owner_id=id_from_token, about=data.about, access_level=a_level,
                     list_id=data.list_id, degree=degree, status='FREE', date_for_status=datetime.utcnow(),
                     date_creation=datetime.utcnow())
-        db.add(new_item)
-        commit_with_check(db)
+        try:
+            db.add(new_item)
+            commit_with_check(db)
+        except:
+            db.rollback()
         db.refresh(new_item)
-        db.add(ItemPicture(item_id=new_item.id, path_to_picture='items/item_0.png'))
+        try:
+            db.add(ItemPicture(item_id=new_item.id, path_to_picture='items/item_0.png'))
+            commit_with_check(db)
+        except:
+            db.rollback()
         return AddItem(ok=True, message="Item added!", ID=new_item.id)
 
 
@@ -98,8 +105,11 @@ class DeleteItem(Mutation):
         if item.owner_id != id_from_token:
             return DeleteItem(ok=False, message="Access denied!")
         # TODO если не работают Cascade, то нужно удалять в остальных таблицах вручную
-        db.delete(item)
-        commit_with_check(db)
+        try:
+            db.delete(item)
+            commit_with_check(db)
+        except:
+            db.rollback()
         return DeleteItem(ok=True, message="Item deleted!")
 
 
@@ -125,8 +135,11 @@ class AddPictures(Mutation):
                 i += 1
                 name = 'items/item_'+str(item.id)+'_'+str(i)
                 if upload_file(pic, Config.bucket, name):
-                    db.add(ItemPicture(item_id=item.id, path_to_picture=name))
-                    commit_with_check(db)
+                    try:
+                        db.add(ItemPicture(item_id=item.id, path_to_picture=name))
+                        commit_with_check(db)
+                    except:
+                        db.rollback()
                 else:
                     return AddPictures(ok=False, message="Pictures haven't been uploaded!")
             else:
@@ -151,8 +164,11 @@ class RemovePictures(Mutation):
             if item.owner_id != id_from_token:
                 raise Exception("Access denied!")
             if delete_file(Config.bucket, item_path.path_to_picture):
-                db.delete(item_path)
-                commit_with_check(db)
+                try:
+                    db.delete(item_path)
+                    commit_with_check(db)
+                except:
+                    db.rollback()
         return RemovePictures(ok=True, message="Pictures have been deleted!")
 
 

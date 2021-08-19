@@ -52,8 +52,11 @@ class ClassicRegisterUser(Mutation):
             return ClassicRegisterUser(ok=False, message="An account is already registered for this nickname")
         new_user = User(email=user_data.email, password_hash=au.get_password_hash(user_data.password),
                          user_name=user_data.user_name, nickname=user_data.nickname, userpic="users/user_0.png")
-        db.add(new_user)
-        commit_with_check(db)
+        try:
+            db.add(new_user)
+            commit_with_check(db)
+        except:
+            db.rollback()
         db.refresh(new_user)
         return ClassicRegisterUser(ok=True, message="Registration done!", ID=new_user.id)
 
@@ -73,8 +76,11 @@ class FastRegisterUser(Mutation):
         code = random.randint(100000, 999999)
         e_host.send_email(user_data.email, "Confirm actions", user_data.user_name, "other/fast_registration.txt", code)
         new_user = User(email=user_data.email, user_name=user_data.user_name, password_hash=au.get_password_hash(code))
-        db.add(new_user)
-        commit_with_check(db)
+        try:
+            db.add(new_user)
+            commit_with_check(db)
+        except:
+            db.rollback()
         db.refresh(new_user)
         return ClassicRegisterUser(ok=True, message="Registration done!", ID=new_user.id)
 
@@ -196,8 +202,11 @@ class SendFriendRequest(Mutation):
             SendFriendRequest(ok=False, message="You are already friends!")
         if db.query(FR).filter_by(user_id_from=id_from_token, user_id_to=to_user_id).first() is not None:
             SendFriendRequest(ok=False, message="You have already sent friend request to this user!")
-        db.add(FR(user_id_from=id_from_token, user_id_to=to_user_id))
-        commit_with_check(db)
+        try:
+            db.add(FR(user_id_from=id_from_token, user_id_to=to_user_id))
+            commit_with_check(db)
+        except:
+            db.rollback()
         return SendFriendRequest(ok=True, message="Friend request has been sent!")
 
 
@@ -213,10 +222,13 @@ class AcceptFriendRequest(Mutation):
         fr = db.query(FR).filter_by(user_id_from=from_user_id, user_id_to=id_from_token).first()
         if (fr is not None) and \
                 (db.query(FS).filter_by(user_id_1=id_from_token, user_id_2=from_user_id).first() is None):
-            db.add(FS(user_id_1=from_user_id, user_id_2=id_from_token))
-            db.add(FS(user_id_2=from_user_id, user_id_1=id_from_token))
-            db.delete(fr)
-            commit_with_check(db)
+            try:
+                db.add(FS(user_id_1=from_user_id, user_id_2=id_from_token))
+                db.add(FS(user_id_2=from_user_id, user_id_1=id_from_token))
+                db.delete(fr)
+                commit_with_check(db)
+            except:
+                db.rollback()
             return AcceptFriendRequest(ok=True, message="Friend request has been accepted!")
         else:
             return AcceptFriendRequest(ok=False, message="Friend request hasn't been accepted!")
@@ -233,8 +245,11 @@ class RejectFriendRequest(Mutation):
     def mutate(self, info, from_user_id, id_from_token):
         fr = db.query(FR).filter_by(user_id_from=from_user_id, user_id_to=id_from_token).first()
         if fr is not None:
-            db.delete(fr)
-            commit_with_check(db)
+            try:
+                db.delete(fr)
+                commit_with_check(db)
+            except:
+                db.rollback()
             return RejectFriendRequest(ok=True, message="Friend request has been rejected!")
         else:
             return RejectFriendRequest(ok=False, message="Friend request hasn't been rejected!")
@@ -254,8 +269,11 @@ class CancelFriendRequest(Mutation):
             return CancelFriendRequest(ok=False, message="Access denied!")
         fr = db.query(FR).filter_by(user_id_from=id_from_token, user_id_to=to_user_id).first()
         if fr is not None:
-            db.delete(fr)
-            commit_with_check(db)
+            try:
+                db.delete(fr)
+                commit_with_check(db)
+            except:
+                db.rollback()
             return CancelFriendRequest(ok=True, message="Friend request has been canceled!")
         else:
             return CancelFriendRequest(ok=True, message="Friend request hasn't been canceled!")
@@ -273,9 +291,12 @@ class RemoveFromFriends(Mutation):
         fr1 = db.query(FS).filter_by(user_id_1=id_from_token, user_id_2=friend_id).first()
         fr2 = db.query(FS).filter_by(user_id_2=id_from_token, user_id_1=friend_id).first()
         if fr1 is not None and fr2 is not None:
-            db.delete(fr1)
-            db.delete(fr2)
-            commit_with_check(db)
+            try:
+                db.delete(fr1)
+                db.delete(fr2)
+                commit_with_check(db)
+            except:
+                db.rollback()
             return RemoveFromFriends(ok=True, message="Friend has been removed :-(")
         else:
             return RemoveFromFriends(ok=True, message="Friend hasn't been removed :-)")

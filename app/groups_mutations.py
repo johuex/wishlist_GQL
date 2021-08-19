@@ -38,11 +38,17 @@ class AddGroup(Mutation):
         role = RoleEnum(data.admin_role)
         new_group = Group(title=data.title, about=data.about, access_level=a_level, date_creation=datetime.utcnow(),
                      date=data.date, admin_id=id_from_token)
-        db.add(new_group)
-        commit_with_check(db)
+        try:
+            db.add(new_group)
+            commit_with_check(db)
+        except:
+            db.rollback()
         db.refresh(new_group)
-        db.add(GroupUser(group_id=new_group.id, user_id=id_from_token, role_in_group=role))
-        commit_with_check(db)
+        try:
+            db.add(GroupUser(group_id=new_group.id, user_id=id_from_token, role_in_group=role))
+            commit_with_check(db)
+        except:
+            db.rollback()
         return AddGroup(ok=True, message="Group has been added!", ID=new_group.id)
 
 
@@ -88,8 +94,11 @@ class DeleteGroup(Mutation):
             raise Exception("No group with this ID found!")
         if group.admin_id != id_from_token:
             return DeleteGroup(ok=False, message="Access denied!")
-        db.delete(group)
-        commit_with_check(db)
+        try:
+            db.delete(group)
+            commit_with_check(db)
+        except:
+            db.rollback()
         return EditGroup(ok=True, message="Group was deleted!")
 
 
@@ -115,16 +124,22 @@ class AddItems(Mutation):
                 for item_id in items_id:
                     i = db.query(Item).filter_by(id=item_id).first()
                     if i.owner_id == id_from_token:
-                        db.add(ItemGroup(group_id=group_id, item_id=item_id))
-                    commit_with_check(db)
+                        try:
+                            db.add(ItemGroup(group_id=group_id, item_id=item_id))
+                            commit_with_check(db)
+                        except:
+                            db.rollback()
                 return AddItems(ok=True, message="Items have been added!")
         if admin_role.role_in_group == RoleEnum.ORGANIZER:
             if user_role.role_in_group is not None and user_role.role_in_group == RoleEnum.ORGANIZER:
                 for item_id in items_id:
                     i = db.query(Item).filter_by(id=item_id).first()
                     if i.owner_id == id_from_token:
-                        db.add(ItemGroup(group_id=group_id, item_id=item_id))
-                commit_with_check(db)
+                        try:
+                            db.add(ItemGroup(group_id=group_id, item_id=item_id))
+                            commit_with_check(db)
+                        except:
+                            db.rollback()
                 return AddItems(ok=True, message="Items have been added!")
 
         return AddItems(ok=False, message="Access denied!")
@@ -152,16 +167,22 @@ class AddLists(Mutation):
                 for list_id in lists_id:
                     i = db.query(Wishlist).filter_by(id=list_id).first()
                     if i.user_id == id_from_token:
-                        db.add(GroupList(group_id=group_id, wishlist_id=list_id))
-                commit_with_check(db)
+                        try:
+                            db.add(GroupList(group_id=group_id, wishlist_id=list_id))
+                            commit_with_check(db)
+                        except:
+                            db.rollback()
                 return AddLists(ok=True, message="WishLists have been added!")
         if admin_role.role_in_group == RoleEnum.ORGANIZER:
             if user_role is not None and user_role.role_in_group == RoleEnum.ORGANIZER:
                 for list_id in lists_id:
                     i = db.query(Item).filter_by(id=list_id).first()
                     if i.user_id == id_from_token:
-                        db.add(GroupList(group_id=group_id, wishlist_id=list_id))
-                commit_with_check(db)
+                        try:
+                            db.add(GroupList(group_id=group_id, wishlist_id=list_id))
+                            commit_with_check(db)
+                        except:
+                            db.rollback()
                 return AddLists(ok=True, message="WishLists have been added!")
 
         return AddLists(ok=True, message="Access denied!")
@@ -188,14 +209,20 @@ class AddUsers(Mutation):
         if admin_role.role_in_group == RoleEnum.FRIENDS:
             if user_role is not None and user_role.role_in_group == RoleEnum.FRIENDS:
                 for user_id in users_id:
-                    db.add(GroupUser(group_id=group_id, user_id=user_id, role_in_group=admin_role))
-                commit_with_check(db)
+                    try:
+                        db.add(GroupUser(group_id=group_id, user_id=user_id, role_in_group=admin_role))
+                        commit_with_check(db)
+                    except:
+                        db.rollback()
                 return AddUsers(ok=True, message="Users have been added!")
         if admin_role.role_in_group == RoleEnum.ORGANIZER:
             if user_role is not None and user_role.role_in_group == RoleEnum.ORGANIZER:
                 for user_id in users_id:
-                    db.add(GroupUser(group_id=group_id, user_id=user_id, role_in_group=RoleEnum.GUEST))
-                commit_with_check(db)
+                    try:
+                        db.add(GroupUser(group_id=group_id, user_id=user_id, role_in_group=RoleEnum.GUEST))
+                        commit_with_check(db)
+                    except:
+                        db.rollback()
                 return AddUsers(ok=True, message="Users have been added!")
 
         return AddUsers(ok=False, message="Access denied!")
@@ -220,8 +247,11 @@ class AddOrganizer(Mutation):
         user_role = db.query(GroupUser.role_in_group).filter_by(user_id=id_from_token, group_id=group_id).first()
         if admin_role.role_in_group == RoleEnum.ORGANIZER:
             if user_role is not None and user_role.role_in_group == RoleEnum.ORGANIZER:
-                db.add(GroupUser(group_id=group_id, user_id=user_id, role_in_group=RoleEnum.ORGANIZER))
-                commit_with_check(db)
+                try:
+                    db.add(GroupUser(group_id=group_id, user_id=user_id, role_in_group=RoleEnum.ORGANIZER))
+                    commit_with_check(db)
+                except:
+                    db.rollback()
                 return AddOrganizer(ok=True, message="Users have been added!")
 
         return AddOrganizer(ok=True, message="Only admin with role ORGANIZER can add ORGANIZER!")

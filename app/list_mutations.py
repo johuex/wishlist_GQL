@@ -35,8 +35,11 @@ class AddList(Mutation):
     def mutate(root, info, data, id_from_token):
         a_level = AccessLevelEnum(data.access_level)
         new_list = Wishlist(title=data.title, user_id=id_from_token, about=data.about, access_level=a_level)
-        db.add(new_list)
-        commit_with_check(db)
+        try:
+            db.add(new_list)
+            commit_with_check(db)
+        except:
+            db.rollback()
         db.refresh(new_list)
         return AddList(ok=True, message="Wishlist added!", ID=new_list.id)
 
@@ -90,8 +93,11 @@ class DeleteWishList(Mutation):
             return DeleteWishList(ok=False, message="Access denied!")
         if with_items:
             # TODO если не работают Cascade, то нужно удалять в остальных таблицах вручную
-            db.delete(wlist)
-            commit_with_check(db)
+            try:
+                db.delete(wlist)
+                commit_with_check(db)
+            except:
+                db.rollback()
             return DeleteWishList(ok=True, message="Wishlist deleted with items!")
         else:
             items_in_list = db.query(Item).filter_by(list_id=list_id).all()
