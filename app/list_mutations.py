@@ -28,7 +28,7 @@ class AddList(Mutation):
 
     ok = Boolean()
     message = String()
-    ID = ID()
+    new_list = Field(lambda: WishlistQl)
 
     @token_required
     @last_seen_set
@@ -41,7 +41,7 @@ class AddList(Mutation):
         except:
             db.rollback()
         db.refresh(new_list)
-        return AddList(ok=True, message="Wishlist added!", ID=new_list.id)
+        return AddList(ok=True, message="Wishlist added!", new_list=new_list)
 
 
 class EditList(Mutation):

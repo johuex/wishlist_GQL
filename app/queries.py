@@ -15,6 +15,7 @@ class Query(ObjectType):
     me = Field(UserQl, description="Return yourself by ID from token")
     user = Field(UserQl, user_id=ID(required=True), description="Return user by ID")
     wishlist = Field(WishlistQl, list_id=ID(required=True), description="Return wishlist by ID")
+    get_all_user_lists = List(WishlistQl, user_id=ID(required=True), description="Return all wishlists of the user by his ID")
     item = Field(ItemQl, item_id=ID(required=True), description="Return item by ID")
     group = Field(GroupQl, group_id=ID(required=True), description="Return group by ID")
     news = Field(lambda: List(WaIQL), description="News from friends of user")
@@ -48,6 +49,28 @@ class Query(ObjectType):
 
     @token_check
     @last_seen_set
+    async def resolve_get_all_user_lists(parent, info, user_id, id_from_token):
+        response = list()
+        wishlists = db.query(WishlistDB).filter_by(user_id=int(user_id)).all()
+        if len(wishlists) == 0:
+            return wishlists
+        for wlist in wishlists:
+            if wlist.access_level == AccessLevelEnum.ALL:
+                response.append(wlist)
+            if wlist.access_level == AccessLevelEnum.NOBODY and wlist.user_id == id_from_token:
+                response.append(wlist)
+            if wlist.access_level == AccessLevelEnum.FRIENDS and db.query(FSBD).filter_by(
+                    user_id_1=wlist.user_id,
+                    user_id_2=id_from_token).first():
+                response.append(wlist)
+        if len(response) > 0:
+            return response
+        return []
+
+
+
+    @token_check
+    @last_seen_set
     async def resolve_item(parent, info, item_id, id_from_token):
         item = db.query(ItemDB).filter_by(id=int(item_id)).first()
         if item.access_level == AccessLevelEnum.ALL:
@@ -72,7 +95,7 @@ class Query(ObjectType):
 
     @token_check
     @last_seen_set
-    def resolve_news(parent, info, id_from_token):
+    async def resolve_news(parent, info, id_from_token):
         wishlists = db.query(WishlistDB)\
             .join(WishlistDB.user_owner)\
             .join(UserDB.friends)\
@@ -87,7 +110,7 @@ class Query(ObjectType):
         return items + wishlists
 
     @last_seen_set
-    def resolve_index(parent, info):
+    async def resolve_index(parent, info):
         wishlists = db.query(WishlistDB) \
             .join(WishlistDB.user_owner) \
             .join(UserDB.friends) \
@@ -102,7 +125,7 @@ class Query(ObjectType):
 
     @token_check
     @last_seen_set
-    def resolve_search(parent, info, search_text, id_from_token):
+    async def resolve_search(parent, info, search_text, id_from_token):
         string_list = search_text.split(" ")
         items = list()
         wishlists = list()
