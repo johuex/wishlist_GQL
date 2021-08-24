@@ -37,3 +37,7 @@ artifacts:
   files:
     - '**/*'
   name: wlist_source_code
+
+cache:
+  paths:
+    - '/root/.cache/pip/**/*'
