@@ -15,17 +15,17 @@ phases:
        python: 3.9
     commands:
       # Install pip
-      - sudo apt-get install python3-pip
+      - sudo apt-get install -y python3-pip
       # Upgrade AWS CLI to the latest version
-      - pip install wheel
-      - pip install virtualenv
+      - pip install wheel --yes
+      - pip install virtualenv --yes
   pre_build:
     run-as: ubuntu
     commands:
       - cd wishlist_GQL
       - python3 -m virtualenv venv
       - source venv/bin/activate
-      - pip install -r requirements.txt
+      - pip install -r requirements.txt --yes
   #build:
     #commands:
       #- pytest tests/unit/
