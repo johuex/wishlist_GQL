@@ -1,0 +1,38 @@
+version: 0.2
+
+#env:
+  #variables:
+     # key: "There are no variables"
+  #parameter-store:
+     # key: "There are no variables"
+
+phases:
+  install:
+    #If you use the Ubuntu standard image 2.0 or later, you must specify runtime-versions.
+    #If you specify runtime-versions and use an image other than Ubuntu standard image 2.0, the build fails.
+    run-as: ubuntu
+    runtime-versions:
+       python: 3.9
+    #commands:
+      # - There are no build commands
+  pre_build:
+    run-as: ubuntu
+    commands:
+      - python3 -m pip install virtualenv
+      - cd wishlist_GQL
+      - python3 -m virtualenv venv
+      - source venv/bin/activate
+      - pip install -r requirements.txt
+  #build:
+    #commands:
+      #- pytest tests/unit/
+      #- pytest tests/integration/ -rfs
+  post_build:
+    run-as: ubuntu
+    commands:
+      - mkdir /home/ubuntu/wishlist_GQL/cert
+      - cp /home/ubuntu/deploy/.env /home/ubuntu//wishlist_GQL # copy dotenv
+      - cp -H /home/ubuntu/deploy/cert/privkey.pem /home/ubuntu/wishlist_GQL/cert # copy https key
+      - cp -H /home/ubuntu/deploy/cert/fullchain.pem /home/ubuntu/wishlist_GQL/cert # copy https cert
+      - supervisorctl restart deploy # start/restart deploying
+
