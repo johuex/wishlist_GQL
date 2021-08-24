@@ -12,7 +12,7 @@ phases:
     #If you specify runtime-versions and use an image other than Ubuntu standard image 2.0, the build fails.
     run-as: ubuntu
     runtime-versions:
-       python: 3.9
+       python: 3.8
     commands:
       # Install pip
       - sudo apt-get install -y python3-pip
