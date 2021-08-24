@@ -14,15 +14,15 @@ phases:
     runtime-versions:
        python: 3.8
     commands:
-      # Install pip
-      - sudo apt-get install -y python3-pip
-      # Upgrade AWS CLI to the latest version
-      - pip install wheel --yes
-      - pip install virtualenv --yes
+      # Install python and pip
+      #- sudo apt-get install -y python3
+      #- sudo apt-get install -y python3-pip
+      # install wheel and virtualenv
+      #- pip install -q wheel
+      #- pip install -q virtualenv
   pre_build:
     run-as: ubuntu
     commands:
-      - cd wishlist_GQL
       - python3 -m virtualenv venv
       - source venv/bin/activate
       - pip install -r requirements.txt --yes
@@ -31,11 +31,5 @@ phases:
       #- pytest tests/unit/
       #- pytest tests/integration/ -rfs
   post_build:
-    run-as: ubuntu
     commands:
-      - mkdir /home/ubuntu/wishlist_GQL/cert
-      - cp /home/ubuntu/deploy/.env /home/ubuntu//wishlist_GQL # copy dotenv
-      - cp -H /home/ubuntu/deploy/cert/privkey.pem /home/ubuntu/wishlist_GQL/cert # copy https key
-      - cp -H /home/ubuntu/deploy/cert/fullchain.pem /home/ubuntu/wishlist_GQL/cert # copy https cert
-      - supervisorctl restart gql_api # start/restart deploying
-
+      - echo Build completed on `date`
