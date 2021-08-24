@@ -11,6 +11,7 @@ pip install -r requirements.txt
 if [ ! -e .env ]
 then
   cp /home/ubuntu/deploy/.env /home/ubuntu/wishlist_GQL # copy dotenv
+  sudo chown ubuntu:ubuntu ./.env
 fi
 if [ ! -e ./cert ]
 then
@@ -19,10 +20,12 @@ fi
 if [ ! -e ./cert/privkey.pem ]
 then
   cp -H /home/ubuntu/deploy/cert/privkey.pem /home/ubuntu/wishlist_GQL/cert # copy https key
+  sudo chown ubuntu:ubuntu ./cert/privkey.pem
 fi
 if [ ! -e ./cert/fullchain.pem ]
 then
   cp -H /home/ubuntu/deploy/cert/fullchain.pem /home/ubuntu/wishlist_GQL/cert # copy https key
+  sudo chown ubuntu:ubuntu ./cert/fullchain.pem
 fi
 
 # Restart services
