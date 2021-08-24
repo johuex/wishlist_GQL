@@ -18,7 +18,8 @@ phases:
   pre_build:
     run-as: ubuntu
     commands:
-      - yes | pip install <package>
+      - yes | python3 -m pip install wheel
+      - yes | python3 -m pip install virtualenv
       - cd wishlist_GQL
       - python3 -m virtualenv venv
       - source venv/bin/activate
