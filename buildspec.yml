@@ -13,19 +13,19 @@ phases:
     run-as: ubuntu
     runtime-versions:
        python: 3.8
-    commands:
+    #commands:
       # Install python and pip
       #- sudo apt-get install -y python3
       #- sudo apt-get install -y python3-pip
       # install wheel and virtualenv
       #- pip install -q wheel
       #- pip install -q virtualenv
-  pre_build:
-    run-as: ubuntu
-    commands:
-      - python3 -m virtualenv venv
-      - source venv/bin/activate
-      - pip install -r requirements.txt --yes
+  #pre_build:
+    #run-as: ubuntu
+    #commands:
+      #- python3 -m virtualenv venv
+      #- source venv/bin/activate
+      #- pip install -r requirements.txt --yes
   #build:
     #commands:
       #- pytest tests/unit/
