@@ -2,10 +2,15 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: $HOME/wishlist_GQL
+    destination: /home/ubuntu/wishlist_GQL
     runas: ubuntu
+permissions:
+  - object: /
+    owner: ubuntu
+    group: ubuntu
+    mode: 774
 hooks:
   BeforeInstall:
-      - location: $HOME/wishlist_GQL/scripts/before_install.sh
+      - location: scripts/before_install.sh
   AfterInstall:
-      - location: $HOME/wishlist_GQL/scripts/after_install.sh
+      - location: scripts/after_install.sh
