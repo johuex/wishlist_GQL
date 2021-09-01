@@ -7,7 +7,6 @@ then
   python3 -m virtualenv venv
 fi
 source venv/bin/activate
-pip uninstall -r requirements1.txt -y
 pip install -r requirements.txt
 if [ ! -e .env ]
 then
